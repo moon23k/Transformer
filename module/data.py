@@ -47,7 +47,8 @@ def load_dataloader(config, split):
                                  padding_value=pad_id)
         
         return {'src': src_batch, 
-                'trg': trg_batch}
+                'trg': trg_batch[:-1],
+                'label': trg_batch[1:]}
 
 
     def sum_collate(batch):
@@ -84,7 +85,8 @@ def load_dataloader(config, split):
         trg_batch = pad_sequence(trg_batch, batch_first=True, padding_value=pad_id)
 
         return {'src': src_batch, 
-                'trg': trg_batch}
+                'trg': trg_batch[:-1],
+                'label': trg_batch[1:]}
 
 
     if config.task == 'sum':

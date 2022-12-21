@@ -1,7 +1,7 @@
 import torch, os
 import torch.nn as nn
-from model.base import Seq2Seq
-from model.hier import HierSeq2Seq
+from model.base import BaseModel
+from model.hier import HierModel
 
 
 
@@ -30,9 +30,9 @@ def check_size(model):
 
 def load_model(config):
     if config.task == 'sum':
-        model = HierSeq2Seq(config)
+        model = HierModel(config)
     else:
-        model = Seq2Seq(config)
+        model = BaseModel(config)
     
     model.apply(init_xavier)
     print(f"Initialized model for {config.task} task has loaded")
