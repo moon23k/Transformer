@@ -91,12 +91,14 @@ class Trainer:
         for idx, batch in enumerate(self.train_dataloader):
             src = batch['src'].to(self.device)
             trg = batch['trg'].to(self.device)
+            label = batch['label'].to(self.device)
 
             with torch.autocast(device_type=self.device_type, dtype=torch.float16):
                 logit = self.model(src, trg)
                 loss = self.criterion(logit.contiguous().view(-1, self.vocab_size),
-                                      trg[:, 1:].contiguous().view(-1))
+                                      label.contiguous().view(-1))
                 loss = loss / self.iters_to_accumulate
+            
             #Backward Loss
             self.scaler.scale(loss).backward()        
             
@@ -126,12 +128,12 @@ class Trainer:
             for _, batch in enumerate(self.valid_dataloader):
                 src = batch['src'].to(self.device)
                 trg = batch['trg'].to(self.device)
+                label = batch['label'].to(self.device)
                 
                 with torch.autocast(device_type=self.device_type, dtype=torch.float16):
-                    logit = self.model(src, trg, teacher_forcing_ratio=0.0)
-
+                    logit = self.model(src, trg)
                     loss = self.criterion(logit.contiguous().view(-1, self.vocab_size),
-                                          trg[:, 1:].contiguous().view(-1))
+                                          label.contiguous().view(-1))
                 epoch_loss += loss.item()
         
         epoch_loss = round(epoch_loss / tot_len, 3)

@@ -4,40 +4,42 @@ from model.module import *
 
 
 
-class SequenceEncoder(nn.Module):
+class Encoder(nn.Module):
     def __init__(self, config):
-        super(SequenceEncoder, self).__init__()
-        self.emb = Embeddings(config)
-        self.norm = LayerNorm(config.hidden_dim)
-        self.layers = clones(EncoderLayer(config), config.n_layers)
+        super(Encoder, self).__init__()
+        
+        #Sequence Level
+        self.seq_emb = Embeddings(config)
+        self.seq_norm = LayerNorm(config.hidden_dim)
+        self.seq_layers = clones(EncoderLayer(config), config.n_layers)
 
-    def forward(self, x, mask):
-        x = self.emb(x)
-        for layer in self.layers:
-            x = layer(x, mask)
-        return self.norm(x)[:, :, 0]
+        #Document Level
+        self.doc_emb = PositionalEncoding(config)
+        self.doc_norm = LayerNorm(config.hidden_dim)
+        self.doc_layers = clones(EncoderLayer(config), config.n_layers)
 
+    def forward(self, x, seq_mask, doc_mask):
 
-class ContextEncoder(nn.Module):
-    def __init__(self, config):
-        super(ContextEncoder, self).__init__()
-        self.pos_enc = PositionalEncoding(config)
-        self.norm = LayerNorm(config.hidden_dim)
-        self.layers = clones(EncoderLayer(config), config.n_layers)
+        seq_out = self.seq_emb(x)
+        for layer in self.seq_layers:
+            seq_out = layer(seq_out, seq_mask)
+        seq_out = self.seq_norm(seq_out)[:, :, 0]
 
-    def forward(self, x, mask):
-        x = self.pos_enc(x)
-        for layer in self.layers:
-            x = layer(x, mask)
-        return self.norm(x)
+        doc_out = self.doc_emb(seq_out)
+        for layer in self.doc_layers:
+            doc_out = layer(doc_out, doc_mask)
+        return self.doc_norm(doc_out)
+
 
 
 class Decoder(nn.Module):
     def __init__(self, config):
         super(Decoder, self).__init__()
+
         self.emb = Embeddings(config)
         self.norm = LayerNorm(config.hidden_dim)
         self.layers = clones(DecoderLayer(config), config.n_layers)
+
 
     def forward(self, x, memory, e_mask, d_mask):
         x = self.emb(x)
@@ -46,25 +48,24 @@ class Decoder(nn.Module):
         return self.norm(x)
 
 
+
 class HierModel(nn.Module):
     def __init__(self, config):
         super(HierModel, self).__init__()
+        
         self.device = config.device
-
         self.pad_id = config.pad_id
         self.bos_id = config.bos_id
 
-        self.sequence_encoder = SequenceEncoder(config)
-        self.context_encoder = ContextEncoder(config)
-        
+        self.encoder = Encoder(config)
         self.decoder = Decoder(config)
         self.fc_out = nn.Linear(config.hidden_dim, config.vocab_size)
 
 
     def enc_mask(self, x):
-        tok_mask = (x != self.pad_id).unsqueeze(-2).unsqueeze(-2).to(self.device)
-        seq_mask = (x[:,:,0] == self.bos_id).unsqueeze(1).unsqueeze(2).to(self.device)
-        return tok_mask, seq_mask
+        seq_mask = (x != self.pad_id).unsqueeze(-2).unsqueeze(-2).to(self.device)
+        doc_mask = (x[:,:,0] == self.bos_id).unsqueeze(1).unsqueeze(2).to(self.device)
+        return seq_mask, doc_mask
 
 
     def dec_mask(self, x):
@@ -77,10 +78,10 @@ class HierModel(nn.Module):
 
 
     def forward(self, src, trg):
-        tok_mask, seq_mask = self.enc_mask(src)
+        seq_mask, doc_mask = self.enc_mask(src)
         d_mask = self.dec_mask(trg)        
         
-        sequence_memory = self.sequence_encoder(src, tok_mask)
-        context_memory = self.context_encoder(sequence_memory, seq_mask)
-        dec_out = self.decoder(trg, context_memory, seq_mask, d_mask)
+        memory = self.encoder(src, seq_mask, doc_mask)
+        dec_out = self.decoder(trg, memory, doc_mask, d_mask)
+
         return self.fc_out(dec_out)
