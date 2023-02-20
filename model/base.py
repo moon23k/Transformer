@@ -35,8 +35,10 @@ class Decoder(nn.Module):
 class BaseModel(nn.Module):
     def __init__(self, config):
         super(BaseModel, self).__init__()
+        
         self.device = config.device
         self.pad_id = config.pad_id
+
         self.encoder = Encoder(config)
         self.decoder = Decoder(config)
         self.fc_out = nn.Linear(config.hidden_dim, config.vocab_size)
