@@ -1,8 +1,6 @@
-import torch, math, time
-import torch.nn as nn
-import torch.nn.functional as F
+import torch, math, time, evaluate
+from tqdm import tqdm
 from module.search import Search
-from datasets import load_metric
 from transformers import BertModel, BertTokenizerFast
 
 
@@ -16,106 +14,71 @@ class Tester:
         self.tokenizer = tokenizer
         self.device = config.device
         self.dataloader = test_dataloader
-        self.batch_size = config.batch_size        
-        self.vocab_size = config.vocab_size
-        self.search = Search(config, self.model, tokenizer)
-        self.criterion = nn.CrossEntropyLoss(ignore_index=config.pad_id, label_smoothing=0.1).to(self.device)
-
+        self.search = Search(config, self.model)
+        
         if self.task == 'nmt':
             self.metric_name = 'BLEU'
-            self.metric_module = load_metric('bleu')
+            self.metric_module = evaluate.load('bleu')
 
         elif self.task == 'dialog':
             self.metric_name = 'Similarity'
-            self.metric_model = BertModel.from_pretrained('bert-base-uncased')
             self.metric_tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
-        
+            self.metric_model = BertModel.from_pretrained('bert-base-uncased')
+            self.metric_model.eval()
+
         elif self.task == 'sum':
             self.metric_name = 'ROUGE'
-            self.metric_module = load_metric('rouge')
+            self.metric_module = evaluate.load('rouge')
 
 
-    def loss_test(self):
-        tot_loss = 0.0
-        
+
+    def test(self):
+        tot_len = 0
+        greedy_score, beam_score = 0, 0
+
         with torch.no_grad():
-            for idx, batch in enumerate(self.dataloader):
+
+            print(f'Test Results on {self.task.upper()}')
+            for batch in tqdm(self.dataloader):
+            
                 src = batch['src'].to(self.device)
                 trg = batch['trg'].to(self.device)
-                label = batch['label'].to(self.device)
-
-                logit = self.model(src, trg)
-                loss = self.criterion(logit.contiguous().view(-1, self.vocab_size), 
-                                      label.contiguous().view(-1)).item()
-                tot_loss += loss
-            tot_loss /= len(self.dataloader)
+                tot_len += src.size(0)
         
-        print(f'Loss Test Results on {self.task} Task')
-        print(f">> Loss: {tot_loss:.3f} | PPL: {math.exp(tot_loss):.2f}\n")
+                greedy_pred = self.search.greedy_search(src)
+                beam_pred = self.search.beam_search(src)
+                
+                greedy_score += self.metric_score(greedy_pred, trg)
+                beam_score += self.metric_score(beam_pred, trg)
+        
+        greedy_score = round(greedy_score/tot_len, 2)
+        beam_score = round(beam_score/tot_len, 2)
+        
+        return greedy_score, beam_score
+        
 
 
-    
     def metric_score(self, pred, label):
-        
-        if self.task == 'nmt':
-            score = self.metric_module.compute(predictions=[pred.split()], 
-                                               references=[[label.split()]])['bleu']
 
+        pred = self.tokenizer.decode(pred)
+        label = self.tokenizer.decode(label.tolist())
+
+        #For Translation and Summarization Tasks
+        if self.task != 'dialog':
+            self.metric_module.add_batch(predictions=pred, references=[[l] for l in label])
+            if self.task == 'nmt':
+                score = self.metric_module.compute()['bleu']
+            elif self.task == 'sum':        
+                score = self.metric_module.compute()['rouge2']
+
+        #For Dialogue Generation Task
         elif self.task == 'dialog':
-            encoding = self.metric_tokenizer([pred, label], padding=True, return_tensors='pt')
+            encoding = self.metric_tokenizer(pred, label, padding=True, truncation=True, return_tensors='pt')
             bert_out = self.metric_model(**encoding)[0]
 
-            normalized = F.normalize(bert_out[:, 0, :], p=2, dim=-1)  # Only use of [CLS] token embedding
+            normalized = torch.nn.functional.normalize(bert_out[:, 0, :], p=2, dim=-1)
             dist = normalized.matmul(normalized.T)
             sim_matrix = dist.new_ones(dist.shape) - dist
             score = sim_matrix[0, 1].item()
 
-        elif self.task == 'sum':
-            score = self.metric_module.compute(predictions=[pred.split()], 
-                                               references=[[label.split()]])['rouge2'].mid.fmeasure            
-            
-        return score * 100
-
-
-    def metric_test(self):
-        metric_results = []
-        batch = next(iter(self.dataloader))
-
-        input_batch = batch['src'].tolist()
-        label_batch = batch['trg'].tolist()
-
-        for input_seq, label_seq in zip(input_batch, label_batch):
-            temp_dict = dict()
-            input_seq = self.tokenizer.decode(input_seq) 
-            label_seq = self.tokenizer.decode(label_seq)
-
-            temp_dict['input_seq'] = input_seq
-            temp_dict['label_seq'] = label_seq
-
-            temp_dict['greedy_pred'] = self.search.greedy_search(input_seq)
-            temp_dict['beam_pred'] = self.search.beam_search(input_seq)
-
-            temp_dict['greedy_metric'] = self.metric_score(temp_dict['greedy_pred'], label_seq)
-            temp_dict['beam_metric'] = self.metric_score(temp_dict['beam_pred'], label_seq)
-            
-            metric_results.append(temp_dict)
-        
-
-        metric_results = sorted(metric_results, key=lambda d: d['beam_metric'])
-        
-        #print_dicts takes only three elems from metric_results
-        print_dicts = [metric_results[0]] + \
-                      [metric_results[self.batch_size // 2]] + \
-                      [metric_results[-1]]
-
-
-        print(f'Metric Test on {self.task} model')
-        for d in print_dicts:
-            print(f">> Input Sequence: {d['input_seq']}")
-            print(f">> Label Sequence: {d['label_seq']}")
-            
-            print(f">> Greedy Sequence: {d['greedy_pred']}")
-            print(f">> Beam   Sequence : {d['beam_pred']}")
-            
-            print(f">> Greedy {self.metric_name.upper()} Score: {d['greedy_metric']:.2f}")
-            print(f">> Beam   {self.metric_name.upper()} Score : {d['beam_metric']:.2f}\n")
+        return (score * 100)

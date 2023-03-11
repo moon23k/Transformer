@@ -20,13 +20,17 @@ def load_data(task):
 
 
 #NMT
-def preprocess_nmt(orig_data, volumn=32000, min_len=10, max_len=300, max_diff=50):
+def preprocess_nmt(orig_data, volumn=32000):
+    min_len = 10 
+    max_len = 300
+    max_diff = 50
+
     volumn_cnt = 0
     concat, processed = [], []
     
     for elem in orig_data:
         temp_dict = dict()
-        src, trg = elem['en'], elem['de']
+        src, trg = elem['en'].lower(), elem['de'].lower()
         src_len, trg_len = len(src), len(trg)
 
         #define filtering conditions
@@ -35,8 +39,8 @@ def preprocess_nmt(orig_data, volumn=32000, min_len=10, max_len=300, max_diff=50
         dif_condition = abs(src_len - trg_len) < max_diff
 
         if max_condition & min_condition & dif_condition:
-            temp_dict['src'] = src.lower()
-            temp_dict['trg'] = trg.lower()
+            temp_dict['src'] = src
+            temp_dict['trg'] = trg
             processed.append(temp_dict)
             concat.append(src + trg)
             
@@ -60,11 +64,16 @@ def preprocess_dialog(orig_data, volumn=32000):
     for dial in orig_data:
         dial_list = []
         dial_turns = len(dial)
+
+        if max([len(d) for d in dial]) > 300:
+            continue
         
         for uttr in dial:
             _uttr = re.sub(r"\s([?,.!’](?:\s|$))", r'\1', uttr)
-            _uttr = re.sub(r'([’])\s+', r'\1', _uttr)
-            dial_list.append(_uttr.strip().lower())
+            _uttr = re.sub(r'([’])\s+', r'\1', _uttr).strip().lower()
+            if len(_uttr) > 300:
+                break
+            dial_list.append(_uttr)
         
         if dial_turns < 2:
             continue
@@ -111,12 +120,16 @@ def preprocess_dialog(orig_data, volumn=32000):
 
 
 #Sum
-def preprocess_sum(orig_data, volumn=32000, max_num=50, min_len=500, max_len=3000):
+def preprocess_sum(orig_data, volumn=32000):
+    max_num = 50 
+    min_len = 500 
+    max_len = 2000
+
     volumn_cnt = 0
     concat, processed = [], []
 
     for elem in orig_data:
-        src, trg = elem['article'], elem['highlights']
+        src, trg = elem['article'].lower(), elem['highlights'].lower()
 
         #Filter too Short or too Long Context
         if not (min_len < len(src) < max_len):
@@ -174,9 +187,10 @@ def build_vocab(task):
 
 
 
-def tokenize_data(task, tokenized, tokenizer):
-    tokenized_data = []
-    for elem in tokenized:
+def tokenize_data(task, tokenizer, data_obj):
+    max_trg_len = 0
+    tokenized = []
+    for elem in data_obj:
         temp_dict = dict()
         
         if task == 'sum':
@@ -186,11 +200,22 @@ def tokenize_data(task, tokenized, tokenizer):
             temp_dict['src'] = temp
         else:    
             temp_dict['src'] = tokenizer.EncodeAsIds(elem['src'])
-        
+
         temp_dict['trg'] = tokenizer.EncodeAsIds(elem['trg'])
-        tokenized_data.append(temp_dict)
+
+        if max_trg_len < len(temp_dict['trg']):
+            max_trg_len = len(temp_dict['trg'])
+
+        tokenized.append(temp_dict)
+
+    with open('config.yaml', 'r') as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+        config['model'][f'{task}_max_pred_len'] = max_trg_len
+
+    with open('config.yaml', 'w') as f:
+        yaml.dump(config, f)        
     
-    return tokenized_data
+    return tokenized
 
 
 def save_data(task, data_obj):
@@ -227,7 +252,7 @@ def main(task):
 
     #Tokenize Datasets
     tokenizer = load_tokenizer(task)
-    tokenized = tokenize_data(task, processed, tokenizer)
+    tokenized = tokenize_data(task, tokenizer, processed)
 
     #Save Data
     save_data(task, tokenized)

@@ -20,12 +20,8 @@ class Trainer:
         self.train_dataloader = train_dataloader
         self.valid_dataloader = valid_dataloader
 
-        self.criterion = nn.CrossEntropyLoss(ignore_index=config.pad_id, 
-                                             label_smoothing=0.1).to(self.device)
-        self.optimizer = optim.Adam(self.model.parameters(), 
-                                    lr=config.learning_rate, 
-                                    betas=(0.9, 0.98), 
-                                    eps=1e-8)
+        self.criterion = nn.CrossEntropyLoss(ignore_index=config.pad_id, label_smoothing=0.1).to(self.device)
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=config.learning_rate)
         self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min')
         
         self.ckpt = config.ckpt
