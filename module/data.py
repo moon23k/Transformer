@@ -24,10 +24,16 @@ class Dataset(torch.utils.data.Dataset):
         return src, trg
 
 
+class Collator(object):
+    def __init__(self, config):
+        self.task = config.task
+        self.pad_id = config.pad_id
 
-def load_dataloader(config, split):
-    global pad_id
-    pad_id = config.pad_id    
+    def __call__(self, batch):
+        if self.task != 'sum':
+            return self.base_collate(batch)
+        elif self.task == 'feat':
+            return self.sum_collate(batch)
 
     def base_collate(batch):
         src_batch, trg_batch = [], []
@@ -47,7 +53,6 @@ def load_dataloader(config, split):
         return {'src': src_batch, 
                 'trg': trg_batch[:-1],
                 'label': trg_batch[1:]}
-
 
     def sum_collate(batch):
         src_batch, _src_batch, trg_batch = [], [], []
@@ -86,17 +91,14 @@ def load_dataloader(config, split):
                 'trg': trg_batch[:-1],
                 'label': trg_batch[1:]}
 
-
-    if config.task == 'sum':
-        return DataLoader(Dataset(config.task, split), 
-                          batch_size=config.batch_size, 
-                          shuffle=True, 
-                          collate_fn=sum_collate,
-                          num_workers=2)
+    def pad_batch(self, batch):
+        return pad_sequence(batch, batch_first=True, padding_value=self.pad_id)
 
 
+def load_dataloader(config, split):
     return DataLoader(Dataset(config.task, split), 
                       batch_size=config.batch_size, 
-                      shuffle=True,
+                      shuffle=True if config.mode=='train' else False,
                       collate_fn=base_collate,
+                      pin_memory=True,
                       num_workers=2)
