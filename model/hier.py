@@ -1,13 +1,14 @@
 import torch
 import torch.nn as nn
 from model.module import *
+from collections import namedtuple
 
 
 
 class Encoder(nn.Module):
     def __init__(self, config):
         super(Encoder, self).__init__()
-        
+
         #Sequence Level
         self.seq_emb = Embeddings(config)
         self.seq_norm = LayerNorm(config.hidden_dim)
@@ -17,6 +18,7 @@ class Encoder(nn.Module):
         self.doc_emb = PositionalEncoding(config)
         self.doc_norm = LayerNorm(config.hidden_dim)
         self.doc_layers = clones(EncoderLayer(config), config.n_layers)
+
 
     def forward(self, x, seq_mask, doc_mask):
 
@@ -59,8 +61,10 @@ class HierModel(nn.Module):
 
         self.encoder = Encoder(config)
         self.decoder = Decoder(config)
-        self.fc_out = nn.Linear(config.hidden_dim, config.vocab_size)
+        self.generator = nn.Linear(config.hidden_dim, config.vocab_size)
 
+        self.criterion = nn.CrossEntropyLoss(ignore_index=config.pad_id, label_smoothing=0.1).to(self.device)
+        self.out = namedtuple('Out', 'logit loss')
 
     def enc_mask(self, x):
         seq_mask = (x != self.pad_id).unsqueeze(-2).unsqueeze(-2).to(self.device)
@@ -78,10 +82,15 @@ class HierModel(nn.Module):
 
 
     def forward(self, src, trg):
+        trg, label = shift_trg(trg)
         seq_mask, doc_mask = self.enc_mask(src)
         d_mask = self.dec_mask(trg)        
         
         memory = self.encoder(src, seq_mask, doc_mask)
         dec_out = self.decoder(trg, memory, doc_mask, d_mask)
-
-        return self.fc_out(dec_out)
+        logit = self.generator(dec_out)
+        
+        self.out.logit = logit
+        self.out.loss = self.criterion(logit.contiguous().view(-1, self.vocab_size), 
+                                       label.contiguous().view(-1))
+        return self.out

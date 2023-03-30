@@ -20,7 +20,6 @@ class Trainer:
         self.train_dataloader = train_dataloader
         self.valid_dataloader = valid_dataloader
 
-        self.criterion = nn.CrossEntropyLoss(ignore_index=config.pad_id, label_smoothing=0.1).to(self.device)
         self.optimizer = optim.AdamW(self.model.parameters(), lr=config.learning_rate)
         self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min')
 
@@ -105,12 +104,9 @@ class Trainer:
         for idx, batch in enumerate(self.train_dataloader):
             src = batch['src'].to(self.device)
             trg = batch['trg'].to(self.device)
-            label = batch['label'].to(self.device)
 
             with torch.autocast(device_type=self.device_type, dtype=torch.float16):
-                logit = self.model(src, trg)
-                loss = self.criterion(logit.contiguous().view(-1, self.vocab_size),
-                                      label.contiguous().view(-1))
+                loss = self.model(src, trg).loss
                 loss = loss / self.iters_to_accumulate
             
             #Backward Loss
@@ -129,7 +125,8 @@ class Trainer:
             epoch_loss += loss.item()
         
         epoch_loss = round(epoch_loss / tot_len, 3)
-        epoch_ppl = round(math.exp(epoch_loss), 3)    
+        epoch_ppl = round(math.exp(epoch_loss), 3) 
+
         return epoch_loss, epoch_ppl
     
 
@@ -142,14 +139,13 @@ class Trainer:
             for _, batch in enumerate(self.valid_dataloader):
                 src = batch['src'].to(self.device)
                 trg = batch['trg'].to(self.device)
-                label = batch['label'].to(self.device)
                 
                 with torch.autocast(device_type=self.device_type, dtype=torch.float16):
-                    logit = self.model(src, trg)
-                    loss = self.criterion(logit.contiguous().view(-1, self.vocab_size),
-                                          label.contiguous().view(-1))
+                    loss = self.model(src, trg).loss
+
                 epoch_loss += loss.item()
         
         epoch_loss = round(epoch_loss / tot_len, 3)
         epoch_ppl = round(math.exp(epoch_loss), 3)        
+        
         return epoch_loss, epoch_ppl

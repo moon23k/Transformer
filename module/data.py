@@ -32,10 +32,10 @@ class Collator(object):
     def __call__(self, batch):
         if self.task != 'sum':
             return self.base_collate(batch)
-        elif self.task == 'feat':
+        elif self.task == 'sum':
             return self.sum_collate(batch)
 
-    def base_collate(batch):
+    def base_collate(self, batch):
         src_batch, trg_batch = [], []
         
         for src, trg in batch:
@@ -44,17 +44,16 @@ class Collator(object):
         
         src_batch = pad_sequence(src_batch,
                                  batch_first=True,
-                                 padding_value=pad_id)
+                                 padding_value=self.pad_id)
         
         trg_batch = pad_sequence(trg_batch, 
                                  batch_first=True, 
-                                 padding_value=pad_id)
+                                 padding_value=self.pad_id)
         
         return {'src': src_batch, 
-                'trg': trg_batch[:-1],
-                'label': trg_batch[1:]}
+                'trg': trg_batch}
 
-    def sum_collate(batch):
+    def sum_collate(self, batch):
         src_batch, _src_batch, trg_batch = [], [], []
         max_seq_num, max_seq_len = 0, 0
 
@@ -69,13 +68,13 @@ class Collator(object):
                 if max_seq_len < len(seq):
                     max_seq_len = len(seq)
         
-        pad_seq = [pad_id for _ in range(max_seq_len)]
+        pad_seq = [self.pad_id for _ in range(max_seq_len)]
         for _doc in _src_batch:
             doc = []
             for seq in _doc:
                 len_gap = max_seq_len - len(seq)
                 if len_gap:
-                    seq += [pad_id] * len_gap
+                    seq += [self.pad_id] * len_gap
                 doc.append(seq)
 
             num_gap = max_seq_num - len(_doc)
@@ -88,8 +87,7 @@ class Collator(object):
         trg_batch = pad_sequence(trg_batch, batch_first=True, padding_value=pad_id)
 
         return {'src': src_batch, 
-                'trg': trg_batch[:-1],
-                'label': trg_batch[1:]}
+                'trg': trg_batch}
 
     def pad_batch(self, batch):
         return pad_sequence(batch, batch_first=True, padding_value=self.pad_id)
@@ -99,6 +97,6 @@ def load_dataloader(config, split):
     return DataLoader(Dataset(config.task, split), 
                       batch_size=config.batch_size, 
                       shuffle=True if config.mode=='train' else False,
-                      collate_fn=base_collate,
+                      collate_fn=Collator(config),
                       pin_memory=True,
                       num_workers=2)

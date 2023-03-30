@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from model.module import *
-
+from collections import namedtuple
 
 
 class Encoder(nn.Module):
@@ -41,10 +41,15 @@ class BaseModel(nn.Module):
 
         self.encoder = Encoder(config)
         self.decoder = Decoder(config)
-        self.fc_out = nn.Linear(config.hidden_dim, config.vocab_size)
+        self.generator = nn.Linear(config.hidden_dim, config.vocab_size)
+
+        self.criterion = nn.CrossEntropyLoss(ignore_index=config.pad_id, label_smoothing=0.1).to(self.device)
+        self.out = namedtuple('Out', 'logit loss')
+
 
     def pad_mask(self, x):
         return (x != self.pad_id).unsqueeze(1).unsqueeze(2)
+
 
     def dec_mask(self, x):
         seq_len = x.size(-1)
@@ -52,8 +57,15 @@ class BaseModel(nn.Module):
         subsequent_mask = torch.triu(torch.ones(attn_shape), diagonal=1).type(torch.uint8) == 0
         return self.pad_mask(x) & subsequent_mask.to(self.device)
 
+
     def forward(self, src, trg):
+        trg, label = shift_trg(trg)
         e_mask, d_mask = self.pad_mask(src), self.dec_mask(trg)
         memory = self.encoder(src, e_mask)
         dec_out = self.decoder(trg, memory, e_mask, d_mask)
-        return self.fc_out(dec_out)
+        logit = self.generator(dec_out)
+
+        self.out.logit = logit
+        self.out.loss = self.criterion(logit.contiguous().view(-1, self.vocab_size), 
+                                       label.contiguous().view(-1))
+        return self.out

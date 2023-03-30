@@ -3,6 +3,10 @@ import torch.nn as nn
 
 
 
+def shift_trg(x):
+    return x[:, :-1], x[:, 1:]
+
+
 def clones(module, N):
     return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
 
@@ -179,4 +183,3 @@ class DecoderLayer(nn.Module):
         x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, d_mask))
         x = self.sublayer[1](x, lambda x: self.src_attn(x, m, m, e_mask))
         return self.sublayer[2](x, self.feed_forward)
-
