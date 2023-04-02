@@ -5,15 +5,19 @@ from model.hier import HierModel
 
 
 
+
 def init_xavier(model):
-    if hasattr(model, 'weight') and model.weight.dim() > 1:
-        nn.init.xavier_uniform_(model.weight.data)
+    for p in model.named_parameters():
+        if 'weight' in p[0] and 'norm' not in p[0]:
+            nn.init.xavier_uniform_(p[1])            
+
 
 
 def count_params(model):
     params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     return params
     
+
 
 def check_size(model):
     param_size, buffer_size = 0, 0
@@ -26,6 +30,7 @@ def check_size(model):
 
     size_all_mb = (param_size + buffer_size) / 1024**2
     return size_all_mb
+
 
 
 def load_model(config):

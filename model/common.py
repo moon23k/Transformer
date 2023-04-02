@@ -114,8 +114,8 @@ class MultiHeadAttention(nn.Module):
                             for lin, x in zip(self.linears, (query, key, value))]       
         
         x, self.attn = attention(query, key, value, mask=mask, dropout=self.dropout)
-
         x = (x.transpose(-2, -3).contiguous().view(orig_shape))
+
         del query, key, value
         return self.linears[-1](x)
 

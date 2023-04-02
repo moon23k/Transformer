@@ -58,6 +58,7 @@ class HierModel(nn.Module):
         self.device = config.device
         self.pad_id = config.pad_id
         self.bos_id = config.bos_id
+        self.vocab_size = config.vocab_size
 
         self.encoder = Encoder(config)
         self.decoder = Decoder(config)
