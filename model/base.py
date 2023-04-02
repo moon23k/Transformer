@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
-from model.module import *
+from model.common import *
 from collections import namedtuple
+
 
 
 class Encoder(nn.Module):
@@ -18,6 +19,7 @@ class Encoder(nn.Module):
         return self.norm(x)
 
 
+
 class Decoder(nn.Module):
     def __init__(self, config):
         super(Decoder, self).__init__()
@@ -30,6 +32,7 @@ class Decoder(nn.Module):
         for layer in self.layers:
             x = layer(x, memory, e_mask, d_mask)
         return self.norm(x)
+
 
 
 class BaseModel(nn.Module):

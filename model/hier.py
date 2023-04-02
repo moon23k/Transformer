@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from model.module import *
+from model.common import *
 from collections import namedtuple
 
 

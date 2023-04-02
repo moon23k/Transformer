@@ -20,8 +20,8 @@ class Search:
         self.eos_id = config.eos_id
         self.pad_id = config.pad_id
         
-        self.max_len = 500
         self.max_repeat = 5
+        self.max_len = config.pred_len
 
         self.Node = namedtuple('Node', ['prev_node', 'pred', 'log_prob', 'length'])
 

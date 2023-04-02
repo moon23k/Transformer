@@ -1,5 +1,6 @@
 import torch, copy, math
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 
@@ -128,7 +129,7 @@ class PositionwiseFeedForward(nn.Module):
         self.dropout = nn.Dropout(config.dropout_ratio)
 
     def forward(self, x):
-        return self.w_2(self.dropout(self.w_1(x).relu()))
+        return self.w_2(self.dropout(F.relu(self.w_1(x))))
 
 
 

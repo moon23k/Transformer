@@ -27,11 +27,19 @@ def set_seed(SEED=42):
 
 class Config(object):
     def __init__(self, args):    
+
+        with open('config.yaml', 'r') as f:
+            params = yaml.load(f, Loader=yaml.FullLoader)
+            for group in params.keys():
+                for key, val in params[group].items():
+                    setattr(self, key, val)
+
         self.task = args.task
         self.mode = args.mode
         self.ckpt = f"ckpt/{self.task}.pt"
 
-        self.iters_to_accumulate = 4
+        if self.task == 'sum':
+            self.batch_size = self.batch_size // 4
 
         use_cuda = torch.cuda.is_available()
         if use_cuda:
@@ -46,12 +54,14 @@ class Config(object):
             self.search = None
             self.device = torch.device('cuda' if use_cuda else 'cpu')
 
-        
-        with open('config.yaml', 'r') as f:
-            params = yaml.load(f, Loader=yaml.FullLoader)
-            for group in params.keys():
-                for key, val in params[group].items():
-                    setattr(self, key, val)
+        if self.task != 'train':
+            if self.task == 'nmt':
+                self.max_pred_len = self.nmt_max_pred_len
+            elif self.task == 'dialog':
+                self.max_pred_len = self.dialog_max_pred_len
+            elif self.task == 'sum':
+                self.max_pred_len = self.sum_max_pred_len
+
 
     def print_attr(self):
         for attribute, value in self.__dict__.items():
