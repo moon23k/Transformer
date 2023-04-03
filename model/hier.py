@@ -67,6 +67,7 @@ class HierModel(nn.Module):
         self.criterion = nn.CrossEntropyLoss(ignore_index=config.pad_id, label_smoothing=0.1).to(self.device)
         self.out = namedtuple('Out', 'logit loss')
 
+
     def enc_mask(self, x):
         seq_mask = (x != self.pad_id).unsqueeze(-2).unsqueeze(-2).to(self.device)
         doc_mask = (x[:,:,0] == self.bos_id).unsqueeze(1).unsqueeze(2).to(self.device)

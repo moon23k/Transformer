@@ -34,8 +34,8 @@ class PositionalEncoding(nn.Module):
         self.emb_dim = config.emb_dim
         self.hidden_dim = config.hidden_dim
         
-        self.register_buffer("sequence_pe", self.generate_pe(config.emb_dim))
-        self.register_buffer("context_pe", self.generate_pe(config.hidden_dim))
+        self.register_buffer("sequence_pe", self.generate_pe(self.emb_dim))
+        self.register_buffer("context_pe", self.generate_pe(self.hidden_dim))
 
         self.dropout = nn.Dropout(config.dropout_ratio)
 

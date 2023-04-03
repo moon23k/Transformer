@@ -84,7 +84,7 @@ class Collator(object):
             src_batch.append(doc)
 
         src_batch = torch.tensor(src_batch, dtype=torch.long)
-        trg_batch = pad_sequence(trg_batch, batch_first=True, padding_value=pad_id)
+        trg_batch = pad_sequence(trg_batch, batch_first=True, padding_value=self.pad_id)
 
         return {'src': src_batch, 
                 'trg': trg_batch}

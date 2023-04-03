@@ -39,7 +39,8 @@ class Config(object):
         self.ckpt = f"ckpt/{self.task}.pt"
 
         if self.task == 'sum':
-            self.batch_size = self.batch_size // 4
+            self.learning_rate = self.learning_rate / 2
+            self.batch_size = self.batch_size // 32
 
         use_cuda = torch.cuda.is_available()
         if use_cuda:
