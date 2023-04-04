@@ -33,8 +33,8 @@ class Tester:
 
 
     def test(self):
-        tot_len = 0
-        greedy_score, beam_score = 0, 0
+        self.model.eval()
+        tot_len, greedy_score, beam_score = 0, 0, 0
 
         with torch.no_grad():
 

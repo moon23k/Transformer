@@ -6,14 +6,12 @@ from collections import namedtuple
 
 
 class Search:
-    def __init__(self, config, model, tokenizer):
+    def __init__(self, config, model):
         super(Search, self).__init__()
         
         self.beam_size = 4
         self.model = model
         self.task = config.task
-
-        self.tokenizer = tokenizer
         self.device = config.device
 
         self.bos_id = config.bos_id
@@ -58,34 +56,9 @@ class Search:
         return Node, nodes, [], []    
 
 
-    def process_input(self, input_seq):
-        if self.task == 'sum':
-            max_len = 0
-            seq_list, input_tensor = [], []
 
-            for seq in input_seq:
-                if seq:
-                    tok_seq = self.tokenizer.encode(seq)
-                    seq_list.append(tok_seq)
-                    if max_len < len(tok_seq):
-                        max_len = len(tok_seq)
-
-            for seq in seq_list:
-                pad_len = max_len - len(seq)
-                input_tensor.append(seq + ([self.pad_id] * pad_len))
-            
-            input_tensor = torch.LongTensor(input_tensor)
-
-        else:
-            input_tokens = self.tokenizer.encode(input_seq)
-            input_tensor = torch.LongTensor(input_tokens)
-
-        return input_tensor.unsqueeze(0).to(self.device)
-
-
-    def beam_search(self, input_seq):
+    def beam_search(self, input_tensor):
         Node, nodes, end_nodes, top_nodes = self.get_nodes()
-        input_tensor = self.process_input(input_seq)
 
         if self.task == 'sum':
             seq_mask, e_mask = self.model.enc_mask(input_tensor)
@@ -135,8 +108,7 @@ class Search:
         return self.tokenizer.decode(beam_out)      
     
 
-    def greedy_search(self, input_seq):
-        input_tensor = self.process_input(input_seq)
+    def greedy_search(self, input_tensor):
 
         output_seq = [[self.pad_id  if i else self.bos_id for i in range(self.max_len)]]
         output_tensor = torch.LongTensor(output_seq).to(self.device)
