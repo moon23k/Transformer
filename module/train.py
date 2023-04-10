@@ -7,6 +7,7 @@ import torch.optim as optim
 class Trainer:
     def __init__(self, config, model, train_dataloader, valid_dataloader):
         super(Trainer, self).__init__()
+
         self.model = model
         self.clip = config.clip
         self.device = config.device
@@ -98,10 +99,12 @@ class Trainer:
 
     def train_epoch(self):
         self.model.train()
-        epoch_loss = 0
         tot_len = len(self.train_dataloader)
+        epoch_loss = 0
+
 
         for idx, batch in enumerate(self.train_dataloader):
+            idx += 1
             src = batch['src'].to(self.device)
             trg = batch['trg'].to(self.device)
 
@@ -112,7 +115,7 @@ class Trainer:
             #Backward Loss
             self.scaler.scale(loss).backward()        
             
-            if (idx + 1) % self.iters_to_accumulate == 0:
+            if idx % self.iters_to_accumulate == 0 or idx == tot_len:
                 #Gradient Clipping
                 self.scaler.unscale_(self.optimizer)
                 nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=self.clip)
@@ -133,7 +136,6 @@ class Trainer:
     def valid_epoch(self):
         self.model.eval()
         epoch_loss = 0
-        tot_len = len(self.valid_dataloader)
         
         with torch.no_grad():
             for _, batch in enumerate(self.valid_dataloader):
@@ -145,7 +147,7 @@ class Trainer:
 
                 epoch_loss += loss.item()
         
-        epoch_loss = round(epoch_loss / tot_len, 3)
+        epoch_loss = round(epoch_loss / len(self.valid_dataloader), 3)
         epoch_ppl = round(math.exp(epoch_loss), 3)        
         
         return epoch_loss, epoch_ppl
