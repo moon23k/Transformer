@@ -43,17 +43,14 @@ class Config(object):
             self.batch_size = self.batch_size // 32
 
         use_cuda = torch.cuda.is_available()
-        if use_cuda:
-            self.device_type = 'cuda'
-        else:
-            self.device_type = 'cpu'
-
+        self.device_type = 'cuda' if use_cuda else 'cpu'
+        
         if self.task == 'inference':
-            self.search_method = 'greedy'
+            self.search_method = args.greedy
             self.device = torch.device('cpu')
         else:
             self.search = None
-            self.device = torch.device('cuda' if use_cuda else 'cpu')
+            self.device = torch.device(self.device_type)
 
         if self.task != 'train':
             if self.task == 'nmt':

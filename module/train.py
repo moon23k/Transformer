@@ -115,7 +115,7 @@ class Trainer:
             #Backward Loss
             self.scaler.scale(loss).backward()        
             
-            if idx % self.iters_to_accumulate == 0 or idx == tot_len:
+            if (idx % self.iters_to_accumulate == 0) or (idx == tot_len):
                 #Gradient Clipping
                 self.scaler.unscale_(self.optimizer)
                 nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=self.clip)
