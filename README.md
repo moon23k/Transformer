@@ -1,21 +1,24 @@
-# Transformer_Anchors
+## Transformer_Anchors
+<br>
 
 > The main purpose of this repo is to implement **Transformer Model** in three NLG tasks from scratch and measure its performance. 
 Each task is Neural Machine Translation, Dialogue Generation, Abstractive Text Summarization. The model architecture has implemented by referring to the famous **Attention is All you Need** paper, and WMT14, Daily-Dialogue, Daily-CNN datasets have used for each task.
 Machine translation and Dialogue generation deal with relatively short sequences, but summarization task covers long sequences. Since it is difficult to properly handle long sentences with only the basic Encoder-Decoder structure, hierarchical encoder structure is used for summary task.
 Except for that, all configurations are the same for the three tasks.
 
-<br>
-<br>
+<br><br>
 
 ## Model desc
+<br>
+
 > Natural Language Sequence is inevitably a time-series data. In order to consider the time series aspect, the RNN structure had been considered as the only option. But Transformer broke this conventional prejudice and showed remarkable achievements by only using Attention Mechanism without any RNN Layer. Existing RNN models always had two chronic problems. First is a vanishing gradient problem which is apparent as the sequence length gets longer. Second is Recurrent Operation process itself, which makes parallel processing difficult. But the Transformer solved these problems only with Attentions. As a result, the architecture not only performs well in a variety of NLP tasks, but is also fast in speed.
 
 
-<br>
-<br>
+<br><br>
 
 ## Configurations
+The default values for experimental variables are set as follows, and each value can be modified by editing the config.yaml file. <br>
+
 | &emsp; **Vocab Config**                            | &emsp; **Model Config**                 | &emsp; **Training Config**               |
 | :---                                               | :---                                    | :---                                     |
 | **`Vocab Size:`** &hairsp; `30,000`                | **`Input Dimension:`** `30,000`         | **`Epochs:`** `10`                       |
@@ -25,25 +28,12 @@ Except for that, all configurations are the same for the three tasks.
 | **`BOS Idx, Token:`** &hairsp; `2`, `[BOS]`        | **`N Layers:`** `2`                     | **`Gradient Clip Max Norm:`** `1` &emsp; |
 | **`EOS Idx, Token:`** &hairsp; `3`, `[EOS]`        | **`Drop-out Ratio:`** `0.5`             | **`Apply AMP:`** `True`                  |
 
-<br>
-<br>
+<br>To shorten the training speed, three techiques are used. <br> 
+* **Pre Tokenization** <br>
+* **Accumulative Loss Update**, as shown in the table above, accumulative frequency has set 4. <br>
+* **Application of AMP**, which enables to convert float32 type vector into float16 type vector.
 
-
-## Results
-> **Training Results**
-
-<center>
-  <img src="https://user-images.githubusercontent.com/71929682/201269096-2cc00b2f-4e8d-4071-945c-f5a3bfbca985.png" width="90%" height="70%">
-</center>
-
-
-</br>
-
-> **Test Results**
-
-</br>
-</br>
-
+<br><br>
 
 ## How to Use
 **First clone git repo in your local env**
