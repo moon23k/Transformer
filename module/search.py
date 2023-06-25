@@ -83,7 +83,6 @@ class Search:
                 out = self.model.fc_out(d_out)[:, -1]
                 
                 logits, preds = torch.topk(out, self.beam_size)
-                logits, preds = logits, preds
                 log_probs = -F.log_softmax(logits, dim=-1)
 
                 for k in range(self.beam_size):
