@@ -106,7 +106,7 @@ class Search:
             _, top_node = sorted(end_nodes, key=operator.itemgetter(0), reverse=True)[0]
         
         beam_out = top_node.pred.squeeze(0).tolist()
-        return self.tokenizer.decode(beam_out)      
+        return beam_out
     
 
     def greedy_search(self, input_tensor):
@@ -132,4 +132,6 @@ class Search:
             if pred.item() == self.eos_id:
                 break
 
-        return self.tokenizer.decode(output_tensor.squeeze(0).tolist())
+        greedy_out = output_tensor.squeeze(0).tolist()
+        
+        return greedy_out

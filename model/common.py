@@ -41,7 +41,7 @@ class PositionalEncoding(nn.Module):
 
 
     @staticmethod
-    def generate_pe(pos_dim, max_len=500):
+    def generate_pe(pos_dim, max_len=512):
         pe = torch.zeros(max_len, pos_dim)
         position = torch.arange(0, max_len).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, pos_dim, 2) * -(math.log(10000.0) / pos_dim))

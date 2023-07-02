@@ -46,7 +46,7 @@ class Config(object):
         self.device_type = 'cuda' if use_cuda else 'cpu'
         
         if self.task == 'inference':
-            self.search_method = args.greedy
+            self.search_method = args.search
             self.device = torch.device('cpu')
         else:
             self.search = None

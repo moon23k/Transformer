@@ -68,7 +68,7 @@ class HierModel(nn.Module):
         self.out = namedtuple('Out', 'logit loss')
 
 
-    def enc_mask(self, x):
+    def pad_mask(self, x):
         seq_mask = (x != self.pad_id).unsqueeze(-2).unsqueeze(-2).to(self.device)
         doc_mask = (x[:,:,0] == self.bos_id).unsqueeze(1).unsqueeze(2).to(self.device)
         return seq_mask, doc_mask
@@ -85,7 +85,7 @@ class HierModel(nn.Module):
 
     def forward(self, src, trg):
         trg, label = shift_trg(trg)
-        seq_mask, doc_mask = self.enc_mask(src)
+        seq_mask, doc_mask = self.pad_mask(src)
         d_mask = self.dec_mask(trg)        
         
         memory = self.encoder(src, seq_mask, doc_mask)
