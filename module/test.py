@@ -1,18 +1,19 @@
 import torch, math, time, evaluate
-from tqdm import tqdm
 from module.search import Search
 from transformers import BertModel, BertTokenizerFast
 
 
 
 class Tester:
-    def __init__(self, config, model, test_dataloader, tokenizer):
+    def __init__(self, config, model, tokenizer, test_dataloader):
         super(Tester, self).__init__()
         
         self.model = model
         self.task = config.task
-        self.tokenizer = tokenizer
         self.device = config.device
+        self.model_type = config.model_type
+
+        self.tokenizer = tokenizer
         self.dataloader = test_dataloader
         self.search = Search(config, self.model)
         
@@ -34,16 +35,15 @@ class Tester:
 
     def test(self):
         self.model.eval()
-        tot_len, greedy_score, beam_score = 0, 0, 0
+        greedy_score, beam_score = 0, 0
 
         with torch.no_grad():
 
-            print(f'Test Results on {self.task.upper()}')
-            for batch in tqdm(self.dataloader):
+            print(f'Test Results of {self.model_type} model on {self.task} Task')
+            for batch in self.dataloader:
             
                 src = batch['src'].to(self.device)
-                trg = batch['trg'].to(self.device)
-                tot_len += src.size(0)
+                label = batch['trg'].to(self.device).tolist()
         
                 greedy_pred = self.search.greedy_search(src)
                 beam_pred = self.search.beam_search(src)
@@ -61,7 +61,7 @@ class Tester:
     def metric_score(self, pred, label):
 
         pred = self.tokenizer.decode(pred)
-        label = self.tokenizer.decode(label.tolist())
+        label = self.tokenizer.decode(label)
 
         #For Translation and Summarization Tasks
         if self.task != 'dialog':

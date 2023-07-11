@@ -4,6 +4,7 @@ import torch.amp as amp
 import torch.optim as optim
 
 
+
 class Trainer:
     def __init__(self, config, model, train_dataloader, valid_dataloader):
         super(Trainer, self).__init__()
@@ -21,14 +22,14 @@ class Trainer:
         self.train_dataloader = train_dataloader
         self.valid_dataloader = valid_dataloader
 
-        self.optimizer = optim.AdamW(self.model.parameters(), lr=config.learning_rate)
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=config.lr)
         self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min')
 
         self.early_stop = config.early_stop
         self.patience = config.patience
         
         self.ckpt = config.ckpt
-        self.record_path = f"ckpt/{config.task}.json"
+        self.record_path = f"ckpt/{config.model_type}.json"
         self.record_keys = ['epoch', 'train_loss', 'train_ppl',
                             'valid_loss', 'valid_ppl', 
                             'learning_rate', 'train_time']
@@ -140,7 +141,7 @@ class Trainer:
         epoch_loss = 0
         
         with torch.no_grad():
-            for _, batch in enumerate(self.valid_dataloader):
+            for batch in self.valid_dataloader:
                 src = batch['src'].to(self.device)
                 trg = batch['trg'].to(self.device)
                 

@@ -1,15 +1,16 @@
 import torch, os
 import torch.nn as nn
-from model.base import BaseModel
-from model.hier import HierModel
+from model.base_model import B_Transformer
+from model.torch_model import T_Transformer
+from model.hybrid_model import H_Transformer
 
 
 
 
-def init_xavier(model):
-    for p in model.named_parameters():
-        if 'weight' in p[0] and 'norm' not in p[0]:
-            nn.init.xavier_uniform_(p[1])            
+def init_weights(model):
+    for name, param in model.named_parameters():
+        if 'weight' in name and 'norm' not in name:
+            nn.init.xavier_uniform_(param)            
 
 
 
@@ -34,13 +35,15 @@ def check_size(model):
 
 
 def load_model(config):
-    if config.task == 'sum':
-        model = HierModel(config)
-    else:
-        model = BaseModel(config)
+    if config.model_type == 'base':
+        model = B_Transformer(config)
+    elif config.model_type == 'torch':
+        model = T_Transformer(config)
+    elif config.model_type == 'hybrid':
+        model = H_Transformer(config)        
     
-    model.apply(init_xavier)
-    print(f"Initialized model for {config.task} task has loaded")
+    init_weights(model)
+    print(f"Initialized {config.model_type} model has loaded")
 
     if config.mode != 'train':
         assert os.path.exists(config.ckpt)
