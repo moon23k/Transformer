@@ -168,8 +168,8 @@ def process_sum(orig_data, volumn=101100):
 
 
 def train_tokenizer(task):
-    assert os.path.exists(corpus_path)
     corpus_path = f'data/{task}/corpus.txt'
+    assert os.path.exists(corpus_path)
     
     assert os.path.exists('config.yaml')
     with open('config.yaml', 'r') as f:
@@ -202,7 +202,7 @@ def save_data(task, data_obj):
 
 
 
-def main(task, vocab_size):
+def main(task):
     #Prerequisite
     os.makedirs(f'data/{task}', exist_ok=True)
 
@@ -218,7 +218,7 @@ def main(task, vocab_size):
         processed = process_sum(orig)        
 
     #Train Tokenizer
-    train_tokenizer(task, vocab_size)
+    train_tokenizer(task)
 
     #Save Data
     save_data(task, processed)

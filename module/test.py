@@ -43,13 +43,13 @@ class Tester:
             for batch in self.dataloader:
             
                 src = batch['src'].to(self.device)
-                label = batch['trg'].to(self.device).tolist()
+                label = batch['trg'].tolist()
         
                 greedy_pred = self.search.greedy_search(src)
                 beam_pred = self.search.beam_search(src)
                 
-                greedy_score += self.metric_score(greedy_pred, trg)
-                beam_score += self.metric_score(beam_pred, trg)
+                greedy_score += self.metric_score(greedy_pred, label)
+                beam_score += self.metric_score(beam_pred, label)
         
         greedy_score = round(greedy_score/tot_len, 2)
         beam_score = round(beam_score/tot_len, 2)
@@ -81,4 +81,4 @@ class Tester:
             sim_matrix = dist.new_ones(dist.shape) - dist
             score = sim_matrix[0, 1].item()
 
-        return (score * 100)
+        return score * 100

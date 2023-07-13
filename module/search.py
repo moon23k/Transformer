@@ -83,7 +83,7 @@ class Search:
                 log_probs = -F.log_softmax(logits, dim=-1)
 
                 for k in range(self.beam_size):
-                    pred = preds[:, k].unsqueeze(0).item()
+                    pred = preds[:, k].item()
                     log_prob = log_probs[:, k].item()
                     
                     next_node = Node(prev_node = curr_node,
