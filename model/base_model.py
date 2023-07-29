@@ -39,7 +39,7 @@ class MultiHeadAttention(nn.Module):
         orig_shape = list(query.shape)
         split_shape = [query.size(0), -1, self.n_heads, self.head_dim]
 
-        query, key, value = [lin(x).view(split_shape).transpose(1, 2)
+        query, key, value = [lin(x).view(split_shape).transpose(1, 2) \
                             for lin, x in zip(self.linears, (query, key, value))]       
         
         x = attention(query, key, value, mask=mask, dropout=self.dropout)
@@ -121,7 +121,11 @@ class BaseModel(nn.Module):
         self.decoder = Decoder(config)
         self.generator = nn.Linear(config.hidden_dim, config.vocab_size)
 
-        self.criterion = nn.CrossEntropyLoss(ignore_index=config.pad_id, label_smoothing=0.1).to(self.device)
+        self.criterion = nn.CrossEntropyLoss(
+            ignore_index=config.pad_id, 
+            label_smoothing=0.1
+        ).to(self.device)
+        
         self.out = namedtuple('Out', 'logit loss')
 
 
@@ -144,6 +148,9 @@ class BaseModel(nn.Module):
         logit = self.generator(dec_out)
 
         self.out.logit = logit
-        self.out.loss = self.criterion(logit.contiguous().view(-1, self.vocab_size), 
-                                       label.contiguous().view(-1))
+        self.out.loss = self.criterion(
+            logit.contiguous().view(-1, self.vocab_size), 
+            label.contiguous().view(-1)
+        )
+        
         return self.out

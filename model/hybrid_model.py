@@ -1,8 +1,14 @@
 import torch
 import torch.nn as nn
 from collections import namedtuple
-from model.common import (clones, shift_trg, Embeddings, LayerNorm,
-                          PositionwiseFeedForward, SublayerConnection)
+from model.common import (
+    clones, 
+    shift_trg, 
+    Embeddings, 
+    LayerNorm,
+    PositionwiseFeedForward, 
+    SublayerConnection
+)
 
 
 
@@ -11,15 +17,20 @@ class MHA(nn.Module):
     def __init__(self, config):
         super(MHA, self).__init__()
 
-        self.attn = nn.MultiheadAttention(embed_dim=config.hidden_dim, 
-                                          num_heads=config.n_heads, 
-                                          dropout=config.dropout_ratio,
-                                          batch_first=True)        
+        self.attn = nn.MultiheadAttention(
+            embed_dim=config.hidden_dim, 
+            num_heads=config.n_heads, 
+            dropout=config.dropout_ratio,
+            batch_first=True
+            )        
 
     def forward(self, q, k, v, key_padding_mask=None, attn_mask=None):
-        out, _ = self.attn(query=q, key=k, value=v,
-                           key_padding_mask=key_padding_mask, 
-                           attn_mask=attn_mask)
+        out, _ = self.attn(
+            query=q, key=k, value=v,
+            key_padding_mask=key_padding_mask, 
+            attn_mask=attn_mask
+            )
+        
         return out
 
 

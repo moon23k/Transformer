@@ -5,17 +5,21 @@ from model.common import clones, shift_trg, Embeddings
 
 
 
+
 class Encoder(nn.Module):
     def __init__(self, config):
         super(Encoder, self).__init__()
+        
+        layer = nn.TransformerEncoderLayer(
+            d_model=config.hidden_dim,
+            nhead=config.n_heads,
+            dim_feedforward=config.pff_dim,
+            dropout=config.dropout_ratio,
+            activation='gelu',
+            batch_first=True
+        )
 
         self.embeddings = Embeddings(config)
-        layer = nn.TransformerEncoderLayer(d_model=config.hidden_dim,
-                                           nhead=config.n_heads,
-                                           dim_feedforward=config.pff_dim,
-                                           dropout=config.dropout_ratio,
-                                           activation='gelu',
-                                           batch_first=True)
         self.layers = clones(layer, config.n_layers)
 
 
@@ -31,21 +35,27 @@ class Decoder(nn.Module):
     def __init__(self, config):
         super(Decoder, self).__init__()
 
+        layer = nn.TransformerDecoderLayer(
+            d_model=config.hidden_dim,
+            nhead=config.n_heads,
+            dim_feedforward=config.pff_dim,
+            dropout=config.dropout_ratio,
+            activation='gelu',
+            batch_first=True
+        )
+
         self.embeddings = Embeddings(config)
-        layer = nn.TransformerDecoderLayer(d_model=config.hidden_dim,
-                                           nhead=config.n_heads,
-                                           dim_feedforward=config.pff_dim,
-                                           dropout=config.dropout_ratio,
-                                           activation='gelu',
-                                           batch_first=True)
         self.layers = clones(layer, config.n_layers)
 
 
     def forward(self, x, memory, tgt_mask, tgt_key_padding_mask, memory_key_padding_mask):
         x = self.embeddings(x)
         for layer in self.layers:
-            x = layer(x, memory, tgt_mask=tgt_mask,
-                      memory_key_padding_mask=memory_key_padding_mask)
+            x = layer(
+                x, memory, 
+                tgt_mask=tgt_mask,
+                memory_key_padding_mask=memory_key_padding_mask
+            )
         return x
 
 
@@ -84,14 +94,21 @@ class T_Transformer(nn.Module):
         
         #Actual Processing
         memory = self.encoder(src, src_key_padding_mask=e_mask)
-        dec_out = self.decoder(trg, memory, tgt_mask=d_mask,  
-                               memory_key_padding_mask=e_mask)
+        
+        dec_out = self.decoder(
+            trg, memory, 
+            tgt_mask=d_mask,  
+            memory_key_padding_mask=e_mask
+        )
+        
         logit = self.generator(dec_out)
         
 
         #Getting Outputs
         self.out.logit = logit
-        self.out.loss = self.criterion(logit.contiguous().view(-1, self.vocab_size), 
-                                       label.contiguous().view(-1))
+        self.out.loss = self.criterion(
+            logit.contiguous().view(-1, self.vocab_size), 
+            label.contiguous().view(-1)
+        )
         
         return self.out

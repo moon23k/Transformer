@@ -38,6 +38,7 @@ class Config(object):
 
         self.task = args.task
         self.mode = args.mode
+        self.model_type = args.model
         self.ckpt = f"ckpt/{self.task}.pt"
 
         if self.task == 'sum':
