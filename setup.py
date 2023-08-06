@@ -1,8 +1,8 @@
 import os, re, json, yaml, argparse
 from datasets import load_dataset
-from tokenizers.models import WordLevel
+from tokenizers.models import WordPiece
 from tokenizers import Tokenizer, normalizers
-from tokenizers.trainers import WordLevelTrainer
+from tokenizers.trainers import WordPieceTrainer
 from tokenizers.pre_tokenizers import Whitespace
 from tokenizers.normalizers import NFD, Lowercase, StripAccents
 
@@ -47,8 +47,8 @@ def process_nmt(orig_data, volumn=101100):
     
     for elem in orig_data:
         temp_dict = dict()
-        src, trg = elem['en'].lower(), elem['de'].lower()
         src_len, trg_len = len(src), len(trg)
+        src, trg = elem['en'].lower(), elem['de'].lower()
 
         #define filtering conditions
         min_condition = (src_len >= min_len) & (trg_len >= min_len)
@@ -179,10 +179,10 @@ def train_tokenizer(task):
     with open('config.yaml', 'r') as f:
         vocab_config = yaml.load(f, Loader=yaml.FullLoader)['vocab']
 
-    tokenizer = Tokenizer(WordLevel(unk_token="[UNK]"))
+    tokenizer = Tokenizer(WordPiece(unk_token="[UNK]"))
     tokenizer.normalizer = normalizers.Sequence([NFD(), Lowercase(), StripAccents()])
     tokenizer.pre_tokenizer = Whitespace()
-    trainer = WordLevelTrainer(
+    trainer = WordPieceTrainer(
         vocab_size=vocab_config['vocab_size'], 
         special_tokens=[
             vocab_config['pad_token'], 
