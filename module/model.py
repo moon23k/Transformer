@@ -1,8 +1,10 @@
 import torch, os
 import torch.nn as nn
-from model.base_model import B_Transformer
-from model.torch_model import T_Transformer
-from model.hybrid_model import H_Transformer
+from model import (
+    BaseModel, 
+    TorchModel, 
+    HybridModel
+)
 
 
 
@@ -35,18 +37,23 @@ def print_model_desc(model):
 
 def load_model(config):
     if config.model_type == 'base':
-        model = B_Transformer(config)
+        model = BaseModel(config)
     elif config.model_type == 'torch':
-        model = T_Transformer(config)
+        model = TorchModel(config)
     elif config.model_type == 'hybrid':
-        model = H_Transformer(config)        
+        model = HybridModel(config)        
     
     init_weights(model)
     print(f"Initialized {config.model_type} model has loaded")
 
     if config.mode != 'train':
         assert os.path.exists(config.ckpt)
-        model_state = torch.load(config.ckpt, map_location=config.device)['model_state_dict']
+        
+        model_state = torch.load(
+            config.ckpt, 
+            map_location=config.device
+        )['model_state_dict']
+        
         model.load_state_dict(model_state)
         print(f"Model states has loaded from {config.ckpt}")       
     

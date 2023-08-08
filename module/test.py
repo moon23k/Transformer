@@ -4,6 +4,7 @@ from transformers import BertModel, BertTokenizerFast
 
 
 
+
 class Tester:
     def __init__(self, config, model, tokenizer, test_dataloader):
         super(Tester, self).__init__()
@@ -22,9 +23,10 @@ class Tester:
             self.metric_module = evaluate.load('bleu')
 
         elif self.task == 'dialog':
-            self.metric_name = 'Similarity'
-            self.metric_tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
-            self.metric_model = BertModel.from_pretrained('bert-base-uncased')
+            mname = "bert-base-uncased"
+            self.metric_name = 'BERT'
+            self.metric_tokenizer = BertTokenizerFast.from_pretrained(mname)
+            self.metric_model = BertModel.from_pretrained(mname)
             self.metric_model.eval()
 
         elif self.task == 'sum':
@@ -65,7 +67,11 @@ class Tester:
 
         #For Translation and Summarization Tasks
         if self.task != 'dialog':
-            self.metric_module.add_batch(predictions=pred, references=[[l] for l in label])
+            
+            self.metric_module.add_batch(
+                predictions=pred, references=[[l] for l in label]
+            )
+            
             if self.task == 'nmt':
                 score = self.metric_module.compute()['bleu']
             elif self.task == 'sum':        
@@ -73,7 +79,12 @@ class Tester:
 
         #For Dialogue Generation Task
         elif self.task == 'dialog':
-            encoding = self.metric_tokenizer(pred, label, padding=True, truncation=True, return_tensors='pt')
+            
+            encoding = self.metric_tokenizer(
+                pred, label, padding=True, 
+                truncation=True, return_tensors='pt'
+            )
+
             bert_out = self.metric_model(**encoding)[0]
 
             normalized = torch.nn.functional.normalize(bert_out[:, 0, :], p=2, dim=-1)

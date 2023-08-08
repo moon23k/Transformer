@@ -60,9 +60,9 @@ class Decoder(nn.Module):
 
 
 
-class T_Transformer(nn.Module):
+class TorchModel(nn.Module):
     def __init__(self, config):
-        super(T_Transformer, self).__init__()
+        super(TorchModel, self).__init__()
         
         self.pad_id = config.pad_id
         self.device = config.device

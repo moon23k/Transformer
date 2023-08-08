@@ -1,22 +1,24 @@
-import numpy as np
-import os, yaml, random, argparse
-
-import torch
-import torch.backends.cudnn as cudnn
+import os, yaml, argparse, torch
 
 from tokenizers import Tokenizer
 from tokenizers.processors import TemplateProcessing
 
-from module.test import Tester
-from module.train import Trainer
-from module.search import Search
-from module.model import load_model
-from module.data import load_dataloader
+from module import (
+    load_dataloader,
+    load_model,
+    Trainer,
+    Tester,
+    Search
+)
 
 
 
 
 def set_seed(SEED=42):
+    import random
+    import numpy as np
+    import torch.backends.cudnn as cudnn
+
     random.seed(SEED)
     np.random.seed(SEED)
     torch.manual_seed(SEED)

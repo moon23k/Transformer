@@ -12,9 +12,7 @@ from tokenizers.normalizers import NFD, Lowercase, StripAccents
 def load_data(task):
     if task == 'nmt':
         data = load_dataset(
-            'wmt14', 
-            'de-en', 
-            split='train'
+            'wmt14', 'de-en', split='train'
         )['translation']
 
     elif task == 'dialog':
@@ -179,7 +177,7 @@ def train_tokenizer(task):
     with open('config.yaml', 'r') as f:
         vocab_config = yaml.load(f, Loader=yaml.FullLoader)['vocab']
 
-    tokenizer = Tokenizer(WordPiece(unk_token="[UNK]"))
+    tokenizer = Tokenizer(WordPiece(unk_token=vocab_config['unk_token']))
     tokenizer.normalizer = normalizers.Sequence([NFD(), Lowercase(), StripAccents()])
     tokenizer.pre_tokenizer = Whitespace()
     trainer = WordPieceTrainer(

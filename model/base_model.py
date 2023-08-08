@@ -1,8 +1,10 @@
 import math, torch
 import torch.nn as nn
 from collections import namedtuple
-from model.common import (clones, shift_trg, PositionwiseFeedForward, 
-                          SublayerConnection, Embeddings, LayerNorm)
+from model.common import (
+    clones, shift_trg, PositionwiseFeedForward, 
+    SublayerConnection, Embeddings, LayerNorm
+)
 
 
 

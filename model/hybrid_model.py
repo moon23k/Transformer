@@ -99,9 +99,9 @@ class Decoder(nn.Module):
 
 
 
-class H_Transformer(nn.Module):
+class HybridModel(nn.Module):
     def __init__(self, config):
-        super(H_Transformer, self).__init__()
+        super(HybridModel, self).__init__()
         
         self.device = config.device
         self.pad_id = config.pad_id
