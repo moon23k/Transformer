@@ -74,8 +74,8 @@ def process_nmt(orig_data, volumn=101100):
 
 #Dialog
 def process_dialog(orig_data):
-    src_list, trg_list = [], []
     corpus, processed = [], []
+    src_list, trg_list = [], []
 
     for dial in orig_data:
         dial_list = []
@@ -115,6 +115,7 @@ def process_dialog(orig_data):
             src_list.extend(dial_list[1::2])
             trg_list.extend(dial_list[2::2])   
 
+
     assert len(src_list) == len(trg_list)
     for src, trg in zip(src_list, trg_list):
         temp_dict = dict()
@@ -134,10 +135,10 @@ def process_dialog(orig_data):
 
 
 #Sum
-def process_sum(orig_data, volumn=101100):
+def process_sum(orig_data, volumn=101100):    
+    volumn_cnt = 0
     corpus, processed = [], []
     min_len, max_len = 500, 3000
-    volumn_cnt = 0
 
 
     for elem in orig_data:

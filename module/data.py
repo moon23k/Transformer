@@ -37,7 +37,6 @@ class Collator(object):
 
 
     def __call__(self, batch):
-
         src_batch, trg_batch = zip(*batch)        
         src_batch = self.pad_batch(src_batch)
         trg_batch = self.pad_batch(trg_batch)

@@ -111,7 +111,10 @@ class HybridModel(nn.Module):
         self.decoder = Decoder(config)
         self.generator = nn.Linear(config.hidden_dim, config.vocab_size)
 
-        self.criterion = nn.CrossEntropyLoss(ignore_index=config.pad_id, label_smoothing=0.1).to(self.device)
+        self.criterion = nn.CrossEntropyLoss(
+            ignore_index=config.pad_id, label_smoothing=0.1
+        ).to(self.device)
+
         self.out = namedtuple('Out', 'logit loss')
 
 
@@ -121,7 +124,12 @@ class HybridModel(nn.Module):
 
     def dec_mask(self, x):
         sz = x.size(1)
-        return torch.triu(torch.full((sz, sz), float('-inf')), diagonal=1).to(self.device)
+        
+        mask = torch.triu(
+            torch.full((sz, sz), float('-inf')), diagonal=1
+        ).to(self.device)
+        
+        return mask 
 
 
     def forward(self, src, trg):
@@ -136,6 +144,10 @@ class HybridModel(nn.Module):
         logit = self.generator(dec_out)
 
         self.out.logit = logit
-        self.out.loss = self.criterion(logit.contiguous().view(-1, self.vocab_size), 
-                                       label.contiguous().view(-1))
+        
+        self.out.loss = self.criterion(
+            logit.contiguous().view(-1, self.vocab_size), 
+            label.contiguous().view(-1)
+        )
+
         return self.out

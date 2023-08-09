@@ -32,7 +32,9 @@ class Search:
             return node.log_prob
 
         #find max number of consecutively repeated tokens
-        repeat = max([sum(1 for token in group if token != self.pad_id) for _, group in groupby(node.pred)])
+        repeat = max(
+            [sum(1 for token in group if token != self.pad_id) for _, group in groupby(node.pred)]
+        )
 
         repeat_penalty = 0.5 if repeat > max_repeat else 1
         len_penalty = ((node.length + min_length) / (1 + min_length)) ** alpha
