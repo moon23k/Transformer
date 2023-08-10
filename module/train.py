@@ -1,9 +1,8 @@
 import time, math, json, torch
 import torch.nn as nn
 import torch.amp as amp
-import torch.optim as optim
-from optim import AdamW
-from optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim import AdamW
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 

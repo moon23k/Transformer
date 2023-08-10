@@ -8,7 +8,7 @@ from module import (
     load_model,
     Trainer,
     Tester,
-    Search
+    Generator
 )
 
 
@@ -78,7 +78,7 @@ def load_tokenizer(config):
 
 
 def inference(config, model, tokenizer):
-    search_module = Search(config, model, tokenizer)
+    generator = Generator(config, model, tokenizer)
 
     print(f'--- Inference Process Started! ---')
     print('[ Type "quit" on user input to stop the Process ]')
@@ -91,11 +91,9 @@ def inference(config, model, tokenizer):
             print('\n--- Inference Process has terminated! ---')
             break        
 
-        if config.search_method == 'beam':
-            output_seq = search_module.beam_search(input_seq)
-        else:
-            output_seq = search_module.greedy_search(input_seq)
+        output_seq = generator.generate(input_seq, search=config.search)
         print(f"Model Out Sequence >> {output_seq}")       
+
 
 
 def main(args):
@@ -112,7 +110,7 @@ def main(args):
         trainer.train()
     
     elif config.mode == 'test':
-        test_dataloader = load_dataloader(config, 'test')
+        test_dataloader = load_dataloader(config, tokenizer, 'test')
         tester = Tester(config, model, tokenizer, test_dataloader)
         tester.test()
         tester.inference_test()

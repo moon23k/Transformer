@@ -45,8 +45,8 @@ def process_nmt(orig_data, volumn=101100):
     
     for elem in orig_data:
         temp_dict = dict()
-        src_len, trg_len = len(src), len(trg)
         src, trg = elem['en'].lower(), elem['de'].lower()
+        src_len, trg_len = len(src), len(trg)
 
         #define filtering conditions
         min_condition = (src_len >= min_len) & (trg_len >= min_len)

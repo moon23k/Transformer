@@ -1,22 +1,23 @@
 import torch, math, time, evaluate
-from module.search import Search
-from transformers import BertModel, BertTokenizerFast
+from module import Generator
+from transformers import BertModel, AutoTokenizer
 
 
 
 
 class Tester:
-    def __init__(self, config, model, tokenizer, test_dataloader):
+    def __init__(self, config, model, tokenizer, test_dataloader, test_volumn=100):
         super(Tester, self).__init__()
         
         self.model = model
         self.task = config.task
         self.device = config.device
+        self.test_volumn = test_volumn
         self.model_type = config.model_type
 
         self.tokenizer = tokenizer
         self.dataloader = test_dataloader
-        self.search = Search(config, self.model)
+        self.generator = Generator(config, model, tokenizer)
         
         if self.task == 'nmt':
             self.metric_name = 'BLEU'
@@ -25,7 +26,7 @@ class Tester:
         elif self.task == 'dialog':
             mname = "bert-base-uncased"
             self.metric_name = 'BERT'
-            self.metric_tokenizer = BertTokenizerFast.from_pretrained(mname)
+            self.metric_tokenizer = AutoTokenizer.from_pretrained(mname)
             self.metric_model = BertModel.from_pretrained(mname)
             self.metric_model.eval()
 
@@ -37,34 +38,34 @@ class Tester:
 
     def test(self):
         self.model.eval()
-        greedy_score, beam_score = 0, 0
+        greedy_score, beam_score = 0.0, 0.0
 
-        with torch.no_grad():
 
-            print(f'Test Results of {self.model_type} model on {self.task} Task')
-            for batch in self.dataloader:
+        for batch in self.dataloader:
+        
+            src = batch['src'].to(self.device)
+            label = batch['trg'].tolist()[0]
+    
+            greedy_pred = self.generator.generate(src, search='greedy')
+            beam_pred = self.generator.generate(src, search='beam')
             
-                src = batch['src'].to(self.device)
-                label = batch['trg'].tolist()
+            greedy_score += self.metric_score(greedy_pred, label)
+            beam_score += self.metric_score(beam_pred, label)
         
-                greedy_pred = self.search.greedy_search(src)
-                beam_pred = self.search.beam_search(src)
-                
-                greedy_score += self.metric_score(greedy_pred, label)
-                beam_score += self.metric_score(beam_pred, label)
+        greedy_score = round(greedy_score/self.test_volumn, 2)
+        beam_score = round(beam_score/self.test_volumn, 2)
         
-        greedy_score = round(greedy_score/tot_len, 2)
-        beam_score = round(beam_score/tot_len, 2)
-        
-        return greedy_score, beam_score
-        
+        self.print_rst(greedy_score, beam_score)
+
+
+    def print_rst(self, greedy_score, beam_score):
+        txt = f"TEST Result on {self.task} with {self.model_type} model"
+        txt += f"\n--Greedy Score: {greedy_score}"
+        txt += f"\n--Beam   Score: {beam_score}" 
+        print(txt)
 
 
     def metric_score(self, pred, label):
-
-        pred = self.tokenizer.decode(pred)
-        label = self.tokenizer.decode(label)
-
         #For Translation and Summarization Tasks
         if self.task != 'dialog':
             

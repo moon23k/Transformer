@@ -1,5 +1,4 @@
 import torch, operator
-import torch.nn.functional as F
 from itertools import groupby
 from queue import PriorityQueue
 from collections import namedtuple
@@ -7,12 +6,13 @@ from collections import namedtuple
 
 
 
-class Search:
-    def __init__(self, config, model):
-        super(Search, self).__init__()
+class Generator:
+    def __init__(self, config, model, tokenizer):
+        super(Generator, self).__init__()
         
         self.model = model
         self.device = model.device
+        self.tokenizer = tokenizer
 
         self.max_len = 512
         self.beam_size = 4
@@ -25,6 +25,19 @@ class Search:
             'Node', 
             ['prev_node', 'pred', 'log_prob', 'length']
         )
+
+
+    def generate(self, input_tensor, search='greedy'):
+        if isinstance(input_tensor, str):
+            input_tensor = torch.LongTensor([[input_tensor]]).to(self.device)
+
+        with torch.no_grad():
+            if search == 'greedy':
+                generated_ids = self.greedy_search(input_tensor)
+            elif search == 'beam':
+                generated_ids = self.beam_search(input_tensor)
+        
+        return self.tokenizer.decode(generated_ids)
 
 
     def get_score(self, node, max_repeat=5, min_length=5, alpha=1.2): 
@@ -87,7 +100,7 @@ class Search:
                 out = self.model.generator(d_out)[:, -1]
                 
                 logits, preds = torch.topk(out, self.beam_size)
-                log_probs = -F.log_softmax(logits, dim=-1)
+                log_probs = torch.log_softmax(logits, dim=-1)
 
                 for k in range(self.beam_size):
                     pred = preds[:, k].item()
@@ -120,7 +133,7 @@ class Search:
     
 
     def greedy_search(self, input_tensor):
-        output_tensor = torch.LongTensor([[self.bos_id]]).to(self.device)
+        output = torch.LongTensor([[self.bos_id]]).to(self.device)
 
         e_mask = self.model.pad_mask(input_tensor)
         memory = self.model.encoder(input_tensor, e_mask)        
@@ -134,9 +147,9 @@ class Search:
             logit = self.model.generator(dec_out)
             
             next_token = logit[:, -1].argmax(-1).unsqueeze(0)
-            output_tensor = torch.cat([output_tensor, next_token], dim=1)
+            output = torch.cat([output, next_token], dim=1)
 
             if next_token == self.eos_id:
                 break
 
-        return output_tensor.squeeze(0)
+        return output.squeeze(0).tolist()
