@@ -48,7 +48,7 @@ class Decoder(nn.Module):
         self.layers = clones(layer, config.n_layers)
 
 
-    def forward(self, x, memory, tgt_mask, tgt_key_padding_mask, memory_key_padding_mask):
+    def forward(self, x, memory, tgt_mask, memory_key_padding_mask):
         x = self.embeddings(x)
         for layer in self.layers:
             x = layer(

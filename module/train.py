@@ -30,7 +30,7 @@ class Trainer:
         self.patience = config.patience
         
         self.ckpt = config.ckpt
-        self.record_path = f"ckpt/{config.model_type}.json"
+        self.record_path = self.ckpt.replace('.pt', '.json')
         self.record_keys = ['epoch', 'train_loss', 'train_ppl',
                             'valid_loss', 'valid_ppl', 
                             'learning_rate', 'train_time']

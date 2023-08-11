@@ -43,7 +43,7 @@ class Config(object):
         self.model_type = args.model
         self.search_method = args.search
 
-        self.ckpt = f"ckpt/{self.task}.pt"
+        self.ckpt = f"ckpt/{self.task}/{self.model_type}_model.pt"
         self.tokenizer_path = f'data/{self.task}/tokenizer.json'
 
         if self.task == 'sum':
@@ -132,8 +132,6 @@ if __name__ == '__main__':
     assert args.task in ['nmt', 'dialog', 'sum']
     assert args.mode in ['train', 'test', 'inference']
     assert args.model in ['base', 'torch', 'hybrid']
-
-    if args.task == 'inference':
-        assert args.search in ['greedy', 'beam']
+    assert args.search in ['greedy', 'beam']
 
     main(args)

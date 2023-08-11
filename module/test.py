@@ -52,16 +52,16 @@ class Tester:
             greedy_score += self.metric_score(greedy_pred, label)
             beam_score += self.metric_score(beam_pred, label)
         
-        greedy_score = round(greedy_score/self.test_volumn, 2)
-        beam_score = round(beam_score/self.test_volumn, 2)
+        greedy_score = round(greedy_score / self.test_volumn, 2)
+        beam_score = round(beam_score / self.test_volumn, 2)
         
         self.print_rst(greedy_score, beam_score)
 
 
     def print_rst(self, greedy_score, beam_score):
         txt = f"TEST Result on {self.task} with {self.model_type} model"
-        txt += f"\n--Greedy Score: {greedy_score}"
-        txt += f"\n--Beam   Score: {beam_score}" 
+        txt += f"\n-- Greedy Score: {greedy_score}"
+        txt += f"\n-- Beam   Score: {beam_score}" 
         print(txt)
 
 

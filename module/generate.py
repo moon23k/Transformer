@@ -141,9 +141,9 @@ class Generator:
         
         for i in range(1, self.max_len):
             #Masking
-            d_mask = self.model.dec_mask(output_tensor)
+            d_mask = self.model.dec_mask(output)
 
-            dec_out = self.model.decoder(output_tensor, memory, e_mask, d_mask)            
+            dec_out = self.model.decoder(output, memory, e_mask, d_mask)            
             logit = self.model.generator(dec_out)
             
             next_token = logit[:, -1].argmax(-1).unsqueeze(0)
