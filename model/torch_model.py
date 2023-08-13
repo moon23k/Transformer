@@ -48,13 +48,13 @@ class Decoder(nn.Module):
         self.layers = clones(layer, config.n_layers)
 
 
-    def forward(self, x, memory, tgt_mask, memory_key_padding_mask):
+    def forward(self, x, memory, memory_key_padding_mask, tgt_mask):
         x = self.embeddings(x)
         for layer in self.layers:
             x = layer(
                 x, memory, 
+                memory_key_padding_mask=memory_key_padding_mask,
                 tgt_mask=tgt_mask,
-                memory_key_padding_mask=memory_key_padding_mask
             )
         return x
 
@@ -97,8 +97,8 @@ class TorchModel(nn.Module):
         
         dec_out = self.decoder(
             trg, memory, 
-            tgt_mask=d_mask,  
-            memory_key_padding_mask=e_mask
+            memory_key_padding_mask=e_mask,
+            tgt_mask=d_mask
         )
         
         logit = self.generator(dec_out)

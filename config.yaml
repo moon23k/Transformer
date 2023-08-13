@@ -17,6 +17,7 @@ model:
     n_layers: 3
     n_heads: 8
     dropout_ratio: 0.1
+    max_len: 512
 
 
 train:

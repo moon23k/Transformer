@@ -14,8 +14,8 @@ class Generator:
         self.device = model.device
         self.tokenizer = tokenizer
 
-        self.max_len = 512
         self.beam_size = 4
+        self.max_len = config.max_len
 
         self.bos_id = config.bos_id
         self.eos_id = config.eos_id
