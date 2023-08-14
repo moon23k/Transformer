@@ -113,7 +113,6 @@ def main(args):
         test_dataloader = load_dataloader(config, tokenizer, 'test')
         tester = Tester(config, model, tokenizer, test_dataloader)
         tester.test()
-        tester.inference_test()
     
     elif config.mode == 'inference':
         translator = inference(config, model, tokenizer)
