@@ -27,6 +27,24 @@ class Generator:
         )
 
 
+
+    def inference(self):
+        print(f'--- Inference Process Started! ---')
+        print('[ Type "quit" on user input to stop the Process ]')
+        
+        while True:
+            input_seq = input('\nUser Input Sequence >> ').lower()
+
+            #End Condition
+            if input_seq == 'quit':
+                print('\n--- Inference Process has terminated! ---')
+                break        
+
+            output_seq = self.generate(input_seq, search=self.search)
+            print(f"Model Out Sequence >> {output_seq}")       
+            
+
+
     def generate(self, input_tensor, search='greedy'):
         if isinstance(input_tensor, str):
             input_tensor = torch.LongTensor([[input_tensor]]).to(self.device)
@@ -38,6 +56,7 @@ class Generator:
                 generated_ids = self.beam_search(input_tensor)
         
         return self.tokenizer.decode(generated_ids)
+
 
 
     def get_score(self, node, max_repeat=5, min_length=5, alpha=1.2): 

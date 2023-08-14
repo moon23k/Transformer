@@ -1,13 +1,12 @@
 import torch
 import torch.nn as nn
-from collections import namedtuple
 from model.common import (
     clones, 
-    shift_trg, 
     Embeddings, 
     LayerNorm,
     PositionwiseFeedForward, 
-    SublayerConnection
+    SublayerConnection,
+    ModelBase
 )
 
 
@@ -99,23 +98,12 @@ class Decoder(nn.Module):
 
 
 
-class HybridModel(nn.Module):
+class HybridModel(ModelBase):
     def __init__(self, config):
-        super(HybridModel, self).__init__()
-        
-        self.device = config.device
-        self.pad_id = config.pad_id
-        self.vocab_size = config.vocab_size
+        super(HybridModel, self).__init__(config)
 
         self.encoder = Encoder(config)
         self.decoder = Decoder(config)
-        self.generator = nn.Linear(config.hidden_dim, config.vocab_size)
-
-        self.criterion = nn.CrossEntropyLoss(
-            ignore_index=config.pad_id, label_smoothing=0.1
-        ).to(self.device)
-
-        self.out = namedtuple('Out', 'logit loss')
 
 
     def pad_mask(self, x):
@@ -132,22 +120,9 @@ class HybridModel(nn.Module):
         return mask 
 
 
-    def forward(self, src, trg):
-        trg, label = shift_trg(trg)
+    def encode(self, x, e_mask):
+        return self.encoder(x, e_mask)
 
-        #Masking
-        src_pad_mask = self.pad_mask(src)
-        trg_mask = self.dec_mask(trg)
 
-        memory = self.encoder(src, src_pad_mask)
-        dec_out = self.decoder(trg, memory, src_pad_mask, trg_mask)
-        logit = self.generator(dec_out)
-
-        self.out.logit = logit
-        
-        self.out.loss = self.criterion(
-            logit.contiguous().view(-1, self.vocab_size), 
-            label.contiguous().view(-1)
-        )
-
-        return self.out
+    def decode(self, x, memory, e_mask, d_mask):
+        return self.decoder(x, memory, e_mask, d_mask)        

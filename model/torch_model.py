@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
-from collections import namedtuple
-from model.common import clones, shift_trg, Embeddings
+from model.common import clones, Embeddings, ModelBase
 
 
 
@@ -23,10 +22,10 @@ class Encoder(nn.Module):
         self.layers = clones(layer, config.n_layers)
 
 
-    def forward(self, x, src_key_padding_mask):
+    def forward(self, x, e_mask):
         x = self.embeddings(x)
         for layer in self.layers:
-            x = layer(x, src_key_padding_mask=src_key_padding_mask)
+            x = layer(x, src_key_padding_mask=e_mask)
         return x
 
 
@@ -48,32 +47,24 @@ class Decoder(nn.Module):
         self.layers = clones(layer, config.n_layers)
 
 
-    def forward(self, x, memory, memory_key_padding_mask, tgt_mask):
+    def forward(self, x, memory, e_mask, d_mask):
         x = self.embeddings(x)
         for layer in self.layers:
             x = layer(
                 x, memory, 
-                memory_key_padding_mask=memory_key_padding_mask,
-                tgt_mask=tgt_mask,
+                memory_key_padding_mask=e_mask,
+                tgt_mask=d_mask,
             )
         return x
 
 
 
-class TorchModel(nn.Module):
+class TorchModel(ModelBase):
     def __init__(self, config):
         super(TorchModel, self).__init__()
         
-        self.pad_id = config.pad_id
-        self.device = config.device
-        self.vocab_size = config.vocab_size
-        
         self.encoder = Encoder(config)
         self.decoder = Decoder(config)
-
-        self.generator = nn.Linear(config.hidden_dim, config.vocab_size)
-        self.criterion = nn.CrossEntropyLoss()
-        self.out = namedtuple('Out', 'logit loss')
 
     
     def pad_mask(self, x):
@@ -84,31 +75,10 @@ class TorchModel(nn.Module):
         sz = x.size(1)
         return torch.triu(torch.full((sz, sz), float('-inf')), diagonal=1).to(self.device)
 
-        
-    def forward(self, src, trg):
-        trg, label = shift_trg(trg)
 
-        #Masking
-        e_mask = self.pad_mask(src)
-        d_mask = self.dec_mask(trg)
-        
-        #Actual Processing
-        memory = self.encoder(src, src_key_padding_mask=e_mask)
-        
-        dec_out = self.decoder(
-            trg, memory, 
-            memory_key_padding_mask=e_mask,
-            tgt_mask=d_mask
-        )
-        
-        logit = self.generator(dec_out)
-        
+    def encode(self, x, e_mask):
+        return self.encoder(x, e_mask)
 
-        #Getting Outputs
-        self.out.logit = logit
-        self.out.loss = self.criterion(
-            logit.contiguous().view(-1, self.vocab_size), 
-            label.contiguous().view(-1)
-        )
-        
-        return self.out
+
+    def decode(self, x, memory, e_mask, d_mask):
+        return self.decoder(x, memory, e_mask, d_mask)        

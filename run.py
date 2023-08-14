@@ -77,24 +77,6 @@ def load_tokenizer(config):
 
 
 
-def inference(config, model, tokenizer):
-    generator = Generator(config, model, tokenizer)
-
-    print(f'--- Inference Process Started! ---')
-    print('[ Type "quit" on user input to stop the Process ]')
-    
-    while True:
-        input_seq = input('\nUser Input Sequence >> ').lower()
-
-        #End Condition
-        if input_seq == 'quit':
-            print('\n--- Inference Process has terminated! ---')
-            break        
-
-        output_seq = generator.generate(input_seq, search=config.search)
-        print(f"Model Out Sequence >> {output_seq}")       
-
-
 
 def main(args):
     set_seed()
@@ -115,8 +97,8 @@ def main(args):
         tester.test()
     
     elif config.mode == 'inference':
-        translator = inference(config, model, tokenizer)
-        translator.translate()
+        generator = Generator(config, model, tokenizer)
+        generator.inference()
     
 
 
