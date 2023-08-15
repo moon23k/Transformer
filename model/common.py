@@ -102,22 +102,21 @@ class SublayerConnection(nn.Module):
 
 
 
-def ModelBase(nn.Module):
+class ModelBase(nn.Module):
     def __init__(self, config):
         super(ModelBase, self).__init__()
 
         self.device = config.device
         self.pad_id = config.pad_id
         self.vocab_size = config.vocab_size
-        self.generator = nn.Linear(config.hidden_dim, config.vocab_size)
-
+        
+        self.generator = nn.Linear(config.hidden_dim, self.vocab_size)
+        
+        self.out = namedtuple('Out', 'logit loss')
         self.criterion = nn.CrossEntropyLoss(
-            ignore_index=config.pad_id, 
+            ignore_index=self.pad_id, 
             label_smoothing=0.1
         ).to(self.device)
-        
-        self.out = namedtuple('Out', 'logit loss')        
-
 
 
     def pad_mask(self):
@@ -127,7 +126,10 @@ def ModelBase(nn.Module):
         pass
 
     def encode(self):
-        return
+        pass
+
+    def decode(self):
+        pass
 
 
     def forward(self, src, trg):
@@ -141,31 +143,9 @@ def ModelBase(nn.Module):
         logit = self.generator(dec_out)
 
         self.out.logit = logit
-        
         self.out.loss = self.criterion(
             logit.contiguous().view(-1, self.vocab_size), 
             label.contiguous().view(-1)
         )
-        
+
         return self.out
-
-
-    def predict(self, x):
-
-        batch_size = x.size(0)
-        pred = torch.zeros((batch_size, self.max_len))
-        pred = pred.to(torch.long).to(self.device)
-        pred[:, 0] = self.bos_id
-
-        e_mask = self.pad_mask(x)
-        memory = self.encode(x, e_mask)
-
-        for idx in range(1, self.max_len):
-            y = pred[:, :idx]
-            d_mask = self.dec_mask(y)
-            d_out = self.decode(y, memory, e_mask, d_mask)
-
-            logit = self.generator(d_out)
-            pred[:, idx] = logit.argmax(dim=-1)[-1:]
-
-        return pred

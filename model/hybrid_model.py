@@ -114,7 +114,8 @@ class HybridModel(ModelBase):
         sz = x.size(1)
         
         mask = torch.triu(
-            torch.full((sz, sz), float('-inf')), diagonal=1
+            torch.full((sz, sz), float('-inf')), 
+            diagonal=1
         ).to(self.device)
         
         return mask 

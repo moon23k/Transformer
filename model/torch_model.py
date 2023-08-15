@@ -61,7 +61,7 @@ class Decoder(nn.Module):
 
 class TorchModel(ModelBase):
     def __init__(self, config):
-        super(TorchModel, self).__init__()
+        super(TorchModel, self).__init__(config)
         
         self.encoder = Encoder(config)
         self.decoder = Decoder(config)

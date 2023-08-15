@@ -13,7 +13,6 @@ from module import (
 
 
 
-
 def set_seed(SEED=42):
     import random
     import numpy as np

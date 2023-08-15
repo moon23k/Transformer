@@ -59,24 +59,31 @@ class Generator:
 
 
 
-    def get_score(self, node, max_repeat=5, min_length=5, alpha=1.2): 
-        if not node.log_prob:
-            return node.log_prob
+    def greedy_search(self, input_tensor):
+        output = torch.LongTensor([[self.bos_id]]).to(self.device)
 
-        #find max number of consecutively repeated tokens
-        repeat = max(
-            [sum(1 for token in group if token != self.pad_id) for _, group in groupby(node.pred)]
-        )
+        e_mask = self.model.pad_mask(input_tensor)
+        memory = self.model.encoder(input_tensor, e_mask)        
 
-        repeat_penalty = 0.5 if repeat > max_repeat else 1
-        len_penalty = ((node.length + min_length) / (1 + min_length)) ** alpha
         
-        score = node.log_prob / len_penalty
-        score = score * repeat_penalty
+        for i in range(1, self.max_len):
+            #Masking
+            d_mask = self.model.dec_mask(output)
 
-        return float(score)
+            dec_out = self.model.decoder(output, memory, e_mask, d_mask)            
+            logit = self.model.generator(dec_out)
+            
+            next_token = logit[:, -1].argmax(-1).unsqueeze(0)
+            output = torch.cat([output, next_token], dim=1)
+
+            if next_token == self.eos_id:
+                break
+
+        return output.squeeze(0).tolist()
 
 
+
+    ### Below Methods are for Beam Seach
     def init_nodes(self):
         #returns [ Node, nodes, end_nodes ]
         
@@ -95,6 +102,25 @@ class Generator:
             nodes.put((0, start_node))
                     
         return Node, nodes, []
+
+
+
+    def get_score(self, node, max_repeat=5, min_length=5, alpha=1.2): 
+        if not node.log_prob:
+            return node.log_prob
+
+        #find max number of consecutively repeated tokens
+        repeat = max(
+            [sum(1 for token in group if token != self.pad_id) for _, group in groupby(node.pred)]
+        )
+
+        repeat_penalty = 0.5 if repeat > max_repeat else 1
+        len_penalty = ((node.length + min_length) / (1 + min_length)) ** alpha
+        
+        score = node.log_prob / len_penalty
+        score = score * repeat_penalty
+
+        return float(score)
 
 
 
@@ -148,27 +174,3 @@ class Generator:
             )[0]
         
         return beam_pred.pred
-    
-    
-
-    def greedy_search(self, input_tensor):
-        output = torch.LongTensor([[self.bos_id]]).to(self.device)
-
-        e_mask = self.model.pad_mask(input_tensor)
-        memory = self.model.encoder(input_tensor, e_mask)        
-
-        
-        for i in range(1, self.max_len):
-            #Masking
-            d_mask = self.model.dec_mask(output)
-
-            dec_out = self.model.decoder(output, memory, e_mask, d_mask)            
-            logit = self.model.generator(dec_out)
-            
-            next_token = logit[:, -1].argmax(-1).unsqueeze(0)
-            output = torch.cat([output, next_token], dim=1)
-
-            if next_token == self.eos_id:
-                break
-
-        return output.squeeze(0).tolist()
