@@ -5,9 +5,6 @@ from collections import namedtuple
 
 
 
-def shift_trg(x):
-    return x[:, :-1], x[:, 1:]
-
 
 def clones(module, N):
     return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
@@ -131,9 +128,13 @@ class ModelBase(nn.Module):
     def decode(self):
         pass
 
+    @staticmethod
+    def shift_trg(x):
+        return x[:, :-1], x[:, 1:]
+
 
     def forward(self, src, trg):
-        trg, label = shift_trg(trg)
+        trg, label = self.shift_trg(trg)
         
         e_mask = self.pad_mask(src) 
         d_mask = self.dec_mask(trg)

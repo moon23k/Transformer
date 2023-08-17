@@ -114,4 +114,9 @@ if __name__ == '__main__':
     assert args.model in ['base', 'torch', 'hybrid']
     assert args.search in ['greedy', 'beam']
 
+    if args.mode == 'train':
+        os.makedirs(f"ckpt/{args.task}", exist_ok=True)
+    else:
+        assert os.path.exists(f'ckpt/{args.task}/{args.model}_model.pt')
+
     main(args)
