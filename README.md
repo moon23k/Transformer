@@ -33,11 +33,18 @@ The default values for experimental variables are set as follows, and each value
 <br><br>
 
 ## Result
-|       | &emsp; Greedy BLEU Score &emsp; | &emsp; Beam BLEU Score &emsp; |
+| &emsp; Task &emsp; | &emsp; Model &emsp; | &emsp; Evaluation Score &emsp; |
 | :---: | :---: | :---: |
-| &emsp; **Custom Model** &emsp; | - | - |
-| &emsp; **Torch Model** &emsp;  | - | - |
-| &emsp; **Hybrid Model** &emsp; | - | - |
+| &emsp; Machine Translation &emsp; | &emsp; Custom Model &emsp; | - |
+| &emsp; - &emsp; | &emsp; Hybrid Model &emsp; | - |
+| &emsp; - &emsp; | &emsp; Torch Model &emsp; | 23.69 |
+| &emsp; Dialogue Generation &emsp; | &emsp; Custom Model &emsp; | - |
+| &emsp; - &emsp; | &emsp; Hybrid Model &emsp; | - |
+| &emsp; - &emsp; | &emsp; Torch Model &emsp; | - |
+| &emsp; Text Summarization &emsp; | &emsp; Custom Model &emsp; | - |
+| &emsp; - &emsp; | &emsp; Hybrid Model &emsp; | - |
+| &emsp; - &emsp; | &emsp; Torch Model &emsp; | - |
+
 
 <br><br>
 
