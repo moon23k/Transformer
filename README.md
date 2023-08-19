@@ -19,12 +19,12 @@ The default values for experimental variables are set as follows, and each value
 
 | **Vocab Configs**                           | **Model Configs**                            | **Training Configs**              |
 | :---                                        | :---                                         | :---                              |
-| **`Tokenizer Type:`** &hairsp; `WordPiece`  | **`Input & Output Dimension:`** `5,000`      | **`Epochs:`** `10`                |
-| **`Vocab Size:`** &hairsp; `30,000`         | **`Embedding Dimension:`** `256`             | **`Batch Size:`** `32`            |
-| **`PAD Idx, Token:`** &hairsp; `0`, `[PAD]` | **`Hidden Dimension:`** `512`                | **`Learning Rate:`** `5e-4`       |
-| **`UNK Idx, Token:`** &hairsp; `1`, `[UNK]` | **`Position-wise Forward Dimension:`** `512` | **`iters_to_accumulate:`** `4`    |
-| **`BOS Idx, Token:`** &hairsp; `2`, `[BOS]` | **`Num Layers:`** `2`                        | **`Gradient Clip Max Norm:`** `1` |
-| **`EOS Idx, Token:`** &hairsp; `3`, `[EOS]` | **`Num Heads:`** `8`                         | **`Apply AMP:`** `True`           |
+| **`Tokenizer Type:`** &hairsp; `WordPiece`  | **`Input & Output Dimension:`** `5,000` | **`Epochs:`** `10`                |
+| **`Vocab Size:`** &hairsp; `30,000`         | **`Embedding Dimension:`** `256`        | **`Batch Size:`** `32`            |
+| **`PAD Idx, Token:`** &hairsp; `0`, `[PAD]` | **`Hidden Dimension:`** `512`           | **`Learning Rate:`** `5e-4`       |
+| **`UNK Idx, Token:`** &hairsp; `1`, `[UNK]` | **`PFF Dimension:`** `512`              | **`iters_to_accumulate:`** `4`    |
+| **`BOS Idx, Token:`** &hairsp; `2`, `[BOS]` | **`Num Layers:`** `2`                   | **`Gradient Clip Max Norm:`** `1` |
+| **`EOS Idx, Token:`** &hairsp; `3`, `[EOS]` | **`Num Heads:`** `8`                    | **`Apply AMP:`** `True`           |
 
 <br>To shorten the training speed, techiques below are used. <br> 
 * **Accumulative Loss Update**, as shown in the table above, accumulative frequency has set 4. <br>
@@ -36,14 +36,14 @@ The default values for experimental variables are set as follows, and each value
 | &emsp; Task &emsp; | &emsp; Model &emsp; | &emsp; Evaluation Score &emsp; |
 | :---: | :---: | :---: |
 | &emsp; Machine Translation &emsp; | &emsp; Custom Model &emsp; | - |
-| &emsp; - &emsp; | &emsp; Hybrid Model &emsp; | - |
-| &emsp; - &emsp; | &emsp; Torch Model &emsp; | 23.69 |
+| &emsp; - &emsp;                   | &emsp; Hybrid Model &emsp; | 11.11 |
+| &emsp; - &emsp;                   | &emsp; Torch Model &emsp;  | 23.69 |
 | &emsp; Dialogue Generation &emsp; | &emsp; Custom Model &emsp; | - |
-| &emsp; - &emsp; | &emsp; Hybrid Model &emsp; | - |
-| &emsp; - &emsp; | &emsp; Torch Model &emsp; | - |
-| &emsp; Text Summarization &emsp; | &emsp; Custom Model &emsp; | - |
-| &emsp; - &emsp; | &emsp; Hybrid Model &emsp; | - |
-| &emsp; - &emsp; | &emsp; Torch Model &emsp; | - |
+| &emsp; - &emsp;                   | &emsp; Hybrid Model &emsp; | 0.49 |
+| &emsp; - &emsp;                   | &emsp; Torch Model &emsp;  | 2.0  |
+| &emsp; Text Summarization &emsp;  | &emsp; Custom Model &emsp; | - |
+| &emsp; - &emsp;                   | &emsp; Hybrid Model &emsp; | 14.20 |
+| &emsp; - &emsp;                   | &emsp; Torch Model &emsp;  | 21.10 |
 
 
 <br><br>
