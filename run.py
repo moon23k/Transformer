@@ -111,7 +111,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     assert args.task in ['nmt', 'dialog', 'sum']
     assert args.mode in ['train', 'test', 'inference']
-    assert args.model in ['base', 'torch', 'hybrid']
+    assert args.model in ['scratch', 'torch']
     assert args.search in ['greedy', 'beam']
 
     if args.mode == 'train':

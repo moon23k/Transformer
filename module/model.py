@@ -1,10 +1,6 @@
 import torch, os
 import torch.nn as nn
-from model import (
-    BaseModel, 
-    TorchModel, 
-    HybridModel
-)
+from model import ScratchModel, TorchModel
 
 
 
@@ -35,12 +31,10 @@ def print_model_desc(model):
 
 
 def load_model(config):
-    if config.model_type == 'base':
-        model = BaseModel(config)
+    if config.model_type == 'scratch':
+        model = ScratchModel(config)
     elif config.model_type == 'torch':
         model = TorchModel(config)
-    elif config.model_type == 'hybrid':
-        model = HybridModel(config)        
     
     init_weights(model)
     print(f"Initialized {config.model_type} model has loaded")

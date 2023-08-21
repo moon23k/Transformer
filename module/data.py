@@ -61,7 +61,7 @@ def load_dataloader(config, tokenizer, split):
 
     return DataLoader(
         Dataset(tokenizer, config.task, split), 
-        batch_size=config.batch_size, 
+        batch_size=batch_size, 
         shuffle=True if is_train else False,
         collate_fn=Collator(config.pad_id),
         pin_memory=True,

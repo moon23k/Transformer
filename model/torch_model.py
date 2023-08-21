@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from model.common import clones, Embeddings, ModelBase
+from .common import clones, Embeddings, ModelBase
 
 
 
@@ -23,9 +23,12 @@ class Encoder(nn.Module):
 
 
     def forward(self, x, e_mask):
+
         x = self.embeddings(x)
+        
         for layer in self.layers:
             x = layer(x, src_key_padding_mask=e_mask)
+        
         return x
 
 
@@ -48,13 +51,16 @@ class Decoder(nn.Module):
 
 
     def forward(self, x, memory, e_mask, d_mask):
+        
         x = self.embeddings(x)
+        
         for layer in self.layers:
             x = layer(
                 x, memory, 
                 memory_key_padding_mask=e_mask,
                 tgt_mask=d_mask,
             )
+
         return x
 
 

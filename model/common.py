@@ -69,7 +69,7 @@ class PositionwiseFeedForward(nn.Module):
         self.dropout = nn.Dropout(config.dropout_ratio)
 
     def forward(self, x):
-        return self.w_2(self.dropout(F.relu(self.w_1(x))))
+        return self.w_2(self.dropout(F.gelu(self.w_1(x))))
 
 
 
