@@ -50,7 +50,7 @@ class Decoder(nn.Module):
         self.layers = clones(layer, config.n_layers)
 
 
-    def forward(self, x, memory, e_mask, d_mask):
+    def forward(self, x, memory, e_mask=None, d_mask=None):
         
         x = self.embeddings(x)
         

@@ -1,4 +1,4 @@
-import torch, math, time, evaluate
+import torch, math, evaluate
 
 
 
@@ -56,8 +56,7 @@ class Tester:
 
         for idx in range(1, self.max_len):
             y = pred[:, :idx]
-            d_mask = self.model.dec_mask(y)
-            d_out = self.model.decode(y, memory, e_mask, d_mask)
+            d_out = self.model.decode(y, memory, e_mask, None)
 
             logit = self.model.generator(d_out)
             pred[:, idx] = logit.argmax(dim=-1)[:, -1]
