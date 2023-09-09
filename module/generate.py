@@ -16,6 +16,7 @@ class Generator:
 
         self.beam_size = 4
         self.max_len = config.max_len
+        self.search_method = config.search_method
 
         self.bos_id = config.bos_id
         self.eos_id = config.eos_id
@@ -40,19 +41,19 @@ class Generator:
                 print('\n--- Inference Process has terminated! ---')
                 break        
 
-            output_seq = self.generate(input_seq, search=self.search)
+            output_seq = self.generate(input_seq)
             print(f"Model Out Sequence >> {output_seq}")       
             
 
 
-    def generate(self, input_tensor, search='greedy'):
+    def generate(self, input_tensor, search_method):
         if isinstance(input_tensor, str):
             input_tensor = torch.LongTensor([[input_tensor]]).to(self.device)
 
         with torch.no_grad():
-            if search == 'greedy':
+            if self.search_method == 'greedy':
                 generated_ids = self.greedy_search(input_tensor)
-            elif search == 'beam':
+            elif self.search_method == 'beam':
                 generated_ids = self.beam_search(input_tensor)
         
         return self.tokenizer.decode(generated_ids)
