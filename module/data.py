@@ -37,12 +37,13 @@ class Collator(object):
 
 
     def __call__(self, batch):
-        src_batch, trg_batch = zip(*batch)        
-        src_batch = self.pad_batch(src_batch)
-        trg_batch = self.pad_batch(trg_batch)
-        
-        return {'src': src_batch, 
-                'trg': trg_batch}
+        x_batch, y_batch = zip(*batch)        
+        x_batch = self.pad_batch(x_batch)
+        y_batch = self.pad_batch(y_batch)
+
+        return {'x': x_batch, 
+                'y': y_batch[:, :-1],
+                'label': y_batch[:, 1:]}
 
 
     def pad_batch(self, batch):

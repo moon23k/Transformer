@@ -4,6 +4,7 @@ from model import ScratchModel, TorchModel
 
 
 
+
 def init_weights(model):
     for name, param in model.named_parameters():
         if 'weight' in name and 'norm' not in name:

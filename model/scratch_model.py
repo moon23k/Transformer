@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .common import clones, Embeddings, ModelBase
+from .common import clones, Embeddings
 
 
 
@@ -158,12 +158,16 @@ class Decoder(nn.Module):
      
 
 
-class ScratchModel(ModelBase):
+class ScratchModel(nn.Module):
     def __init__(self, config):
-        super(ScratchModel, self).__init__(config)
+        super(ScratchModel, self).__init__()
+
+        self.pad_id = config.pad_id
+        self.device = config.device
 
         self.encoder = Encoder(config)
         self.decoder = Decoder(config)
+        self.generator = nn.Linear(config.hidden_dim, config.vocab_size)
 
 
     def pad_mask(self, x):
@@ -177,9 +181,12 @@ class ScratchModel(ModelBase):
         return pad_mask & sub_mask
 
 
-    def encode(self, x, e_mask):
-        return self.encoder(x, e_mask)
+    def forward(self, x, y):
+        e_mask = self.pad_mask(x) 
+        d_mask = self.dec_mask(y)
 
+        memory = self.encoder(x, e_mask)
+        dec_out = self.decoder(y, memory, e_mask, d_mask)
+        logit = self.generator(dec_out)
 
-    def decode(self, x, memory, e_mask, d_mask):
-        return self.decoder(x, memory, e_mask, d_mask)                
+        return logit

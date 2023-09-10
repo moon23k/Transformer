@@ -1,4 +1,4 @@
-import torch, math, evaluate
+import torch, evaluate
 
 
 
@@ -52,11 +52,11 @@ class Tester:
         pred[:, 0] = self.bos_id
 
         e_mask = self.model.pad_mask(x)
-        memory = self.model.encode(x, e_mask)
+        memory = self.model.encoder(x, e_mask)
 
         for idx in range(1, self.max_len):
             y = pred[:, :idx]
-            d_out = self.model.decode(y, memory, e_mask, None)
+            d_out = self.model.decoder(y, memory, e_mask, None)
 
             logit = self.model.generator(d_out)
             pred[:, idx] = logit.argmax(dim=-1)[:, -1]

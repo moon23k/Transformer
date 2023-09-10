@@ -46,9 +46,10 @@ class Generator:
             
 
 
-    def generate(self, input_tensor, search_method):
-        if isinstance(input_tensor, str):
-            input_tensor = torch.LongTensor([[input_tensor]]).to(self.device)
+    def generate(self, input_seq, search_method):
+        
+        input_tensor = self.tokenizer.encode(input_tensor).ids    
+        input_tensor = torch.LongTensor([input_tensor]).to(self.device)
 
         with torch.no_grad():
             if self.search_method == 'greedy':
