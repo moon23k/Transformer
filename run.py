@@ -45,9 +45,6 @@ class Config(object):
         self.ckpt = f"ckpt/{self.task}/{self.model_type}_model.pt"
         self.tokenizer_path = f'data/{self.task}/tokenizer.json'
 
-        if self.task == 'sum':
-            self.batch_size = self.batch_size // 4
-
         use_cuda = torch.cuda.is_available()
         self.device_type = 'cuda' \
                            if use_cuda and self.mode != 'inference' \
@@ -109,7 +106,7 @@ if __name__ == '__main__':
     parser.add_argument('-search', default='greedy', required=False)
     
     args = parser.parse_args()
-    assert args.task in ['nmt', 'dialog', 'sum']
+    assert args.task in ['translation', 'dialogue', 'summarization']
     assert args.mode in ['train', 'test', 'inference']
     assert args.model in ['scratch', 'torch']
     assert args.search in ['greedy', 'beam']

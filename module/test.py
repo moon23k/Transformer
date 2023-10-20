@@ -16,7 +16,7 @@ class Tester:
         self.max_len = config.max_len
         self.model_type = config.model_type
         
-        self.metric_name = 'BLEU' if self.task == 'nmt' else 'ROUGE'
+        self.metric_name = 'BLEU' if self.task == 'translation' else 'ROUGE'
         self.metric_module = evaluate.load(self.metric_name.lower())
         
 
@@ -27,8 +27,8 @@ class Tester:
 
         with torch.no_grad():
             for batch in self.dataloader:
-                x = batch['src'].to(self.device)
-                y = self.tokenize(batch['trg'])
+                x = batch['x'].to(self.device)
+                y = self.tokenize(batch['y'])
 
                 pred = self.predict(x)
                 pred = self.tokenize(pred)
@@ -67,7 +67,7 @@ class Tester:
 
     def evaluate(self, pred, label):
         #For NMT Evaluation
-        if self.task == 'nmt':
+        if self.task == 'translation':
             score = self.metric_module.compute(
                 predictions=pred, 
                 references =[[l] for l in label]
