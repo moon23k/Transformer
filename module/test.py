@@ -61,6 +61,10 @@ class Tester:
             logit = self.model.generator(d_out)
             pred[:, idx] = logit.argmax(dim=-1)[:, -1]
 
+            #Early Stop Condition
+            if (pred == self.eos_id).sum().item() == batch_size:
+                break
+
         return pred
 
 
