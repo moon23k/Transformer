@@ -59,7 +59,7 @@ def load_dataloader(config, tokenizer, split):
     return DataLoader(
         Dataset(tokenizer, config.task, split), 
         batch_size=config.batch_size, 
-        shuffle=True split == 'train',
+        shuffle=split == 'train',
         collate_fn=Collator(config.pad_id),
         pin_memory=True,
         num_workers=2

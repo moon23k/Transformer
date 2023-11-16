@@ -12,6 +12,7 @@ class Tester:
 
         self.task = config.task
         self.bos_id = config.bos_id
+        self.eos_id = config.eos_id
         self.device = config.device
         self.max_len = config.max_len
         self.model_type = config.model_type
