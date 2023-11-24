@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from collections import namedtuple
 from .common import clones, Embeddings
+
 
 
 
@@ -164,10 +166,14 @@ class ScratchModel(nn.Module):
 
         self.pad_id = config.pad_id
         self.device = config.device
+        self.vocab_size = config.vocab_size
 
         self.encoder = Encoder(config)
         self.decoder = Decoder(config)
-        self.generator = nn.Linear(config.hidden_dim, config.vocab_size)
+        self.generator = nn.Linear(config.hidden_dim, self.vocab_size)
+
+        self.criterion = nn.CrossEntropyLoss()
+        self.out = namedtuple('Out', 'logit loss')
 
 
     def pad_mask(self, x):
@@ -181,7 +187,14 @@ class ScratchModel(nn.Module):
         return pad_mask & sub_mask
 
 
+    @staticmethod
+    def shift_y(x):
+        return x[:, :-1], x[:, 1:]
+
+
     def forward(self, x, y):
+        y, label = self.shift_y(y)
+
         e_mask = self.pad_mask(x) 
         d_mask = self.dec_mask(y)
 
@@ -189,4 +202,11 @@ class ScratchModel(nn.Module):
         dec_out = self.decoder(y, memory, e_mask, d_mask)
         logit = self.generator(dec_out)
 
-        return logit
+        #Getting Outputs
+        self.out.logit = logit
+        self.out.loss = self.criterion(
+            logit.contiguous().view(-1, self.vocab_size), 
+            label.contiguous().view(-1)
+        )
+        
+        return self.out

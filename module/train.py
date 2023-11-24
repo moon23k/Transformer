@@ -1,4 +1,4 @@
-import time, math, json, torch
+import json, torch
 import torch.nn as nn
 import torch.amp as amp
 from torch.optim import AdamW
@@ -29,53 +29,68 @@ class Trainer:
         self.lr_scheduler = ReduceLROnPlateau(self.optimizer, patience=2)
 
         self.ckpt = config.ckpt
-        self.record_path = self.ckpt.replace('.pt', '.json')
-        self.record_keys = ['epoch', 'train_loss', 'train_ppl',
-                            'valid_loss', 'valid_ppl', 
-                            'learning_rate', 'train_time']
+        self.record_path = self.ckpt.replace('model.pt', 'report.json')
 
 
-    def print_epoch(self, record_dict):
-        print(f"""Epoch {record_dict['epoch']}/{self.n_epochs} | \
-              Time: {record_dict['train_time']}""".replace(' ' * 14, ''))
-        
-        print(f"""  >> Train Loss: {record_dict['train_loss']:.3f} | \
-              Train PPL: {record_dict['train_ppl']:.2f}""".replace(' ' * 14, ''))
 
-        print(f"""  >> Valid Loss: {record_dict['valid_loss']:.3f} | \
-              Valid PPL: {record_dict['valid_ppl']:.2f}\n""".replace(' ' * 14, ''))
+    def print_epoch(self, epoch_report):
+        train_loss = f"{epoch_report['train_loss']:.3f}"
+        valid_loss = f"{epoch_report['valid_loss']:.3f}"
+        gpu_memory = epoch_report['gpu_memory']
+        max_memory = epoch_report['gpu_max_memory']
 
+        max_len = max(len(train_loss), len(valid_loss), len(gpu_memory), len(max_memory))
 
-    @staticmethod
-    def measure_time(start_time, end_time):
-        elapsed_time = end_time - start_time
+        elapsed_time = epoch_report['epoch_time']
         elapsed_min = int(elapsed_time / 60)
         elapsed_sec = int(elapsed_time - (elapsed_min * 60))
-        return f"{elapsed_min}m {elapsed_sec}s"
+
+        txt = f"""Epoch {epoch_report['epoch']}/{self.n_epochs} | Time: {elapsed_min}m {elapsed_sec}s
+            >> Train Loss: {train_loss:>{max_len}}  |  Valid Loss: {valid_loss:>{max_len}}
+            >> GPU Memory: {gpu_memory:>{max_len}}  |  Max Memory: {max_memory:>{max_len}}\n"""
+        print(txt.replace(' '* 11, ''))
+        
 
 
     def train(self):
+        #Train Prerequisites
         records = []
-        prev_loss, best_loss = float('inf'), float('inf')
         patience = self.patience
+        prev_loss, best_loss = float('inf'), float('inf')
 
+        torch.cuda.empty_cache()
         for epoch in range(1, self.n_epochs + 1):
-            start_time = time.time()
 
-            record_vals = [epoch, *self.train_epoch(), *self.valid_epoch(), 
-                           self.optimizer.param_groups[0]['lr'],
-                           self.measure_time(start_time, time.time())]
-            record_dict = {k: v for k, v in zip(self.record_keys, record_vals)}
-            
-            records.append(record_dict)
-            self.print_epoch(record_dict)
-            
-            val_loss = record_dict['valid_loss']
-            self.lr_scheduler.step(val_loss)
+            start_time, end_time = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+            start_time.record()
+
+            train_epoch_loss = self.train_epoch()
+            valid_epoch_loss = self.valid_epoch()
+
+            epoch_gpu_memory = f"{torch.cuda.memory_allocated(device=None) / 1024**3:.2f}GB"
+            epoch_gpu_max_memory = f"{torch.cuda.max_memory_allocated(device=None) / 1024**3:.2f}GB"
+
+            end_time.record()
+            torch.cuda.synchronize()
+            elapsed_time = start_time.elapsed_time(end_time) // 1000
+
+            epoch_record = {
+                'epoch': epoch, 
+                'train_loss': train_epoch_loss, 
+                'valid_loss': valid_epoch_loss, 
+                'learning_rate': self.optimizer.param_groups[0]['lr'], 
+                'epoch_time': elapsed_time,
+                'gpu_memory': epoch_gpu_memory, 
+                'gpu_max_memory': epoch_gpu_max_memory                
+            }
+
+            records.append(epoch_record)
+            self.print_epoch(epoch_record)
+            self.lr_scheduler.step(valid_epoch_loss)
 
             #save best model
-            if best_loss > val_loss:
-                best_loss = val_loss
+            if best_loss > valid_epoch_loss:
+                best_loss = valid_epoch_loss
                 torch.save({'epoch': epoch,
                             'model_state_dict': self.model.state_dict(),
                             'optimizer_state_dict': self.optimizer.state_dict()},
@@ -83,7 +98,7 @@ class Trainer:
 
             #Early Stopping Process
             if self.early_stop:
-                if prev_loss > val_loss:
+                if prev_loss > valid_epoch_loss:
                     patience = self.patience
             
                 else:
@@ -92,19 +107,13 @@ class Trainer:
                         print('--- Training Ealry Stopped ---\n')
                         break
 
-                prev_loss = val_loss
+                prev_loss = valid_epoch_loss
 
             
         #save train_records
         with open(self.record_path, 'w') as fp:
             json.dump(records, fp)
 
-
-    def get_loss(self, logit, label):
-        return self.criterion(
-            logit.contiguous().view(-1, self.vocab_size), 
-            label.contiguous().view(-1)
-        )
 
 
     def train_epoch(self):
@@ -115,13 +124,10 @@ class Trainer:
 
         for idx, batch in enumerate(self.train_dataloader):
             idx += 1
-            x = batch['x'].to(self.device)
-            y = batch['y'].to(self.device)
-            label = batch['label'].to(self.device)
+            batch = {k: v.to(self.device) for k, v in batch.items()}
 
             with torch.autocast(device_type=self.device_type, dtype=torch.float16):
-                logit = self.model(x, y)
-                loss = self.get_loss(logit, label)                
+                loss = self.model(**batch).loss               
                 loss = loss / self.iters_to_accumulate
             
             #Backward Loss
@@ -138,12 +144,10 @@ class Trainer:
                 self.optimizer.zero_grad()
 
             epoch_loss += loss.item()
-        
-        epoch_loss = round(epoch_loss / tot_len, 3)
-        epoch_ppl = round(math.exp(epoch_loss), 3) 
 
-        return epoch_loss, epoch_ppl
+        return round(epoch_loss / tot_len, 3)
     
+
 
     def valid_epoch(self):
         self.model.eval()
@@ -151,17 +155,10 @@ class Trainer:
         
         with torch.no_grad():
             for batch in self.valid_dataloader:
-                x = batch['x'].to(self.device)
-                y = batch['y'].to(self.device) 
-                label = batch['label'].to(self.device)
+                batch = {k: v.to(self.device) for k, v in batch.items()}
                 
                 with torch.autocast(device_type=self.device_type, dtype=torch.float16):
-                    logit = self.model(x, y)
-                    loss = self.get_loss(logit, label)
-
-                epoch_loss += loss.item()
+                    loss = self.model(**batch).loss
+                    epoch_loss += loss.item()
         
-        epoch_loss = round(epoch_loss / len(self.valid_dataloader), 3)
-        epoch_ppl = round(math.exp(epoch_loss), 3)        
-        
-        return epoch_loss, epoch_ppl
+        return round(epoch_loss / len(self.valid_dataloader), 3)
