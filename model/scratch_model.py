@@ -2,9 +2,50 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from collections import namedtuple
-from .common import clones, Embeddings, MultiHeadAttention
+from .common import clones, Embeddings
 
 
+
+
+
+class MultiHeadAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+
+        hidden_dim = config.hidden_dim
+        self.n_heads = config.n_heads
+
+        assert hidden_dim // self.n_heads
+        self.head_dim = hidden_dim // self.n_heads
+        
+        self.dropout = nn.Dropout(config.dropout_ratio)
+        self.linears = clones(nn.Linear(hidden_dim, hidden_dim), 4)
+        self.scale = torch.sqrt(torch.FloatTensor([self.head_dim])).to(config.device)
+
+
+    def forward(self, query, key, value, mask = None):
+
+        orig_shape = list(query.shape)
+        split_shape = [query.size(0), -1, self.n_heads, self.head_dim]
+
+        Q, K, V = [lin(x).view(split_shape).transpose(1, 2) \
+                   for lin, x in zip(self.linears, (query, key, value))]   
+
+        score = torch.matmul(Q, K.permute(0, 1, 3, 2)) / self.scale
+
+        if mask is not None:
+            score = score.masked_fill(mask==0, -1e10)
+
+        attention = torch.softmax(score, dim=-1)
+
+        x = torch.matmul(self.dropout(attention), V)
+        
+        x = x.permute(0, 2, 1, 3).contiguous()
+        x = x.view(orig_shape)
+
+        del Q, K, V
+
+        return self.linears[-1](x)
 
 
 
