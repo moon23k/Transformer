@@ -24,7 +24,6 @@ class Trainer:
         self.scaler = torch.cuda.amp.GradScaler()
         self.iters_to_accumulate = config.iters_to_accumulate        
 
-        self.criterion = nn.CrossEntropyLoss()
         self.optimizer = AdamW(self.model.parameters(), lr=config.lr)
         self.lr_scheduler = ReduceLROnPlateau(self.optimizer, patience=2)
 
