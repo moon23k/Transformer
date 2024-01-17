@@ -16,7 +16,8 @@ class Encoder(nn.Module):
             dim_feedforward=config.pff_dim,
             dropout=config.dropout_ratio,
             activation='gelu',
-            batch_first=True
+            batch_first=True,
+            norm_first=True
         )
 
         self.embeddings = Embeddings(config)
@@ -24,12 +25,9 @@ class Encoder(nn.Module):
 
 
     def forward(self, x, e_mask):
-
         x = self.embeddings(x)
-        
         for layer in self.layers:
             x = layer(x, src_key_padding_mask=e_mask)
-        
         return x
 
 
@@ -44,7 +42,8 @@ class Decoder(nn.Module):
             dim_feedforward=config.pff_dim,
             dropout=config.dropout_ratio,
             activation='gelu',
-            batch_first=True
+            batch_first=True,
+            norm_first=True
         )
 
         self.embeddings = Embeddings(config)
@@ -52,9 +51,7 @@ class Decoder(nn.Module):
 
 
     def forward(self, x, memory, e_mask=None, d_mask=None):
-        
         x = self.embeddings(x)
-        
         for layer in self.layers:
             x = layer(
                 x, memory, 

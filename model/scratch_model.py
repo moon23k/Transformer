@@ -2,65 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from collections import namedtuple
-from .common import clones, Embeddings
-
-
-
-
-
-class MultiHeadAttention(nn.Module):
-    def __init__(self, config):
-        super().__init__()
-
-        hidden_dim = config.hidden_dim
-        self.n_heads = config.n_heads
-
-        assert hidden_dim // self.n_heads
-        self.head_dim = hidden_dim // self.n_heads
-        
-        self.dropout = nn.Dropout(config.dropout_ratio)
-        self.linears = clones(nn.Linear(hidden_dim, hidden_dim), 4)
-        self.scale = torch.sqrt(torch.FloatTensor([self.head_dim])).to(config.device)
-
-
-    def forward(self, query, key, value, mask = None):
-
-        orig_shape = list(query.shape)
-        split_shape = [query.size(0), -1, self.n_heads, self.head_dim]
-
-        Q, K, V = [lin(x).view(split_shape).transpose(1, 2) \
-                   for lin, x in zip(self.linears, (query, key, value))]   
-
-        score = torch.matmul(Q, K.permute(0, 1, 3, 2)) / self.scale
-
-        if mask is not None:
-            score = score.masked_fill(mask==0, -1e10)
-
-        attention = torch.softmax(score, dim=-1)
-
-        x = torch.matmul(self.dropout(attention), V)
-        
-        x = x.permute(0, 2, 1, 3).contiguous()
-        x = x.view(orig_shape)
-
-        del Q, K, V
-
-        return self.linears[-1](x)
-
-
-
-class PositionwiseFeedForward(nn.Module):
-    def __init__(self, config):
-        super().__init__()
-
-        self.fc_1 = nn.Linear(config.hidden_dim, config.pff_dim)
-        self.fc_2 = nn.Linear(config.pff_dim, config.hidden_dim)
-        self.dropout = nn.Dropout(config.dropout_ratio)
-
-
-    def forward(self, x):
-        x = self.dropout(F.gelu(self.fc_1(x)))
-        return self.fc_2(x)        
+from .common import (
+    clones, 
+    Embeddings, 
+    MultiHeadAttention, 
+    PositionwiseFeedForward
+)
 
 
 
@@ -75,14 +22,15 @@ class EncoderLayer(nn.Module):
         self.self_attn_norm = nn.LayerNorm(hidden_dim)
         self.pff_norm = nn.LayerNorm(hidden_dim)
         
-        self.dropout = nn.Dropout(config.dropout_ratio)
+        self.dropout1 = nn.Dropout(config.dropout_ratio)
+        self.dropout2 = nn.Dropout(config.dropout_ratio)
 
 
     def forward(self, x, e_mask):
         _x = self.self_attn(x, x, x, e_mask)
-        x = self.self_attn_norm(x + self.dropout(_x))
+        x = self.self_attn_norm(x + self.dropout1(_x))
         _x = self.pff(x)
-        x = self.pff_norm(x + self.dropout(_x))
+        x = self.pff_norm(x + self.dropout2(_x))
 
         return x
 
@@ -101,19 +49,21 @@ class DecoderLayer(nn.Module):
         self.enc_attn_norm = nn.LayerNorm(hidden_dim)
         self.pff_norm = nn.LayerNorm(hidden_dim)
 
-        self.dropout = nn.Dropout(config.dropout_ratio)
+        self.dropout1 = nn.Dropout(config.dropout_ratio)
+        self.dropout2 = nn.Dropout(config.dropout_ratio)
+        self.dropout3 = nn.Dropout(config.dropout_ratio)
 
 
     def forward(self, x, m, e_mask, d_mask):
 
         _x = self.self_attn(x, x, x, d_mask)
-        x = self.self_attn_norm(x + self.dropout(_x))
+        x = self.self_attn_norm(x + self.dropout1(_x))
 
         _x = self.enc_attn(x, m, m, e_mask)
-        x = self.enc_attn_norm(x + self.dropout(_x))
+        x = self.enc_attn_norm(x + self.dropout2(_x))
 
         _x = self.pff(x)
-        x = self.pff_norm(x + self.dropout(_x))
+        x = self.pff_norm(x + self.dropout3(_x))
 
         return x
 
@@ -125,11 +75,9 @@ class Encoder(nn.Module):
 
         self.device = config.device
         self.emb = Embeddings(config)
-        self.dropout = nn.Dropout(config.dropout_ratio)
 
-        self.layers = nn.ModuleList(
-            [EncoderLayer(config) for _ in range(config.n_layers)]
-        )
+        layer = EncoderLayer(config)
+        self.layers = clones(layer, config.n_layers)
 
 
     def forward(self, x, e_mask):
@@ -146,11 +94,9 @@ class Decoder(nn.Module):
 
         self.device = config.device
         self.emb = Embeddings(config)
-        self.dropout = nn.Dropout(config.dropout_ratio)
 
-        self.layers = nn.ModuleList(
-            [DecoderLayer(config) for _ in range(config.n_layers)]
-        )
+        layer = DecoderLayer(config)
+        self.layers = clones(layer, config.n_layers)
 
 
     def forward(self, x, memory, e_mask, d_mask):
