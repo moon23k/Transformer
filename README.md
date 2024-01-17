@@ -82,14 +82,14 @@ The default values for experimental variables are set as follows, and each value
 │   └── train.py
 ├── README.md
 ├── run.py                 --this file includes codes for actual tasks such as training, testing, and inference to carry out the practical aspects of the work
-└── setup.py               --this file contains a series of codes for preprocessing data, training a tokenizer, and saving the dataset.
+└── setup.py               --this file contains a series of codes for preprocessing data, training a tokenizer, and saving the dataset
 ```
 
 <br>
 
 **First clone git repo in your local env**
 ```
-git clone https://github.com/moon23k/LSTM_Anchors
+git clone https://github.com/moon23k/Transformer
 ```
 
 <br>
