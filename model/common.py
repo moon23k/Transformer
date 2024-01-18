@@ -6,8 +6,10 @@ from collections import namedtuple
 
 
 
+
 def clones(module, N):
     return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
+
 
 
 
@@ -52,6 +54,7 @@ class MultiHeadAttention(nn.Module):
         
 
 
+
 class PositionalEncoding(nn.Module):
     def __init__(self, config):
         super(PositionalEncoding, self).__init__()
@@ -73,6 +76,7 @@ class PositionalEncoding(nn.Module):
 
     def forward(self, x):
         return x + self.pe[:, :x.size(1)]
+
 
 
 
@@ -102,6 +106,7 @@ class Embeddings(nn.Module):
 
 
 
+
 class PositionwiseFeedForward(nn.Module):
     def __init__(self, config):
         super(PositionwiseFeedForward, self).__init__()
@@ -111,3 +116,15 @@ class PositionwiseFeedForward(nn.Module):
 
     def forward(self, x):
         return self.w_2(self.dropout(F.gelu(self.w_1(x))))
+
+
+
+
+class SublayerConnection(nn.Module):
+    def __init__(self, config):
+        super(SublayerConnection, self).__init__()
+        self.norm = nn.LayerNorm(config.hidden_dim)
+        self.dropout = nn.Dropout(config.dropout_ratio)
+
+    def forward(self, x, sublayer):
+        return x + self.dropout(sublayer(self.norm(x)))

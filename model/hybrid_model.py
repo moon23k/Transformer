@@ -1,24 +1,14 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from collections import namedtuple
 from .common import (
     clones, 
     Embeddings, 
+    SublayerConnection,
+    MultiHeadAttention, 
     PositionwiseFeedForward
 )
 
-
-
-class SublayerConnection(nn.Module):
-    def __init__(self, config):
-        super(SublayerConnection, self).__init__()
-        self.norm = nn.LayerNorm(config.hidden_dim)
-        self.dropout = nn.Dropout(config.dropout_ratio)
-
-    def forward(self, x, sublayer):
-        x += self.dropout(sublayer(x))
-        return self.norm(x)
 
 
 
@@ -45,13 +35,26 @@ class EncoderLayer(nn.Module):
 
 
 
+
 class DecoderLayer(nn.Module):
     def __init__(self, config):
         super(DecoderLayer, self).__init__()
-        self.self_attn = nn.MultiheadAttention(config.hidden_dim, config.n_heads, batch_first=True)
-        self.enc_attn = nn.MultiheadAttention(config.hidden_dim, config.n_heads, batch_first=True)
+        
+        self.self_attn = nn.MultiheadAttention(
+            config.hidden_dim, 
+            config.n_heads, 
+            batch_first=True
+        )
+
+        self.enc_attn = nn.MultiheadAttention(
+            config.hidden_dim, 
+            config.n_heads, 
+            batch_first=True
+        )
+
         self.pff = PositionwiseFeedForward(config)
         self.sublayer = clones(SublayerConnection(config), 3)
+
 
     def forward(self, x, m, e_mask, d_mask):
         x = self.sublayer[0](
@@ -70,6 +73,7 @@ class DecoderLayer(nn.Module):
 
 
 
+
 class Encoder(nn.Module):
     def __init__(self, config):
         super(Encoder, self).__init__()        
@@ -83,6 +87,8 @@ class Encoder(nn.Module):
         for layer in self.layers:
             x = layer(x, e_mask)
         return x
+
+
 
 
 class Decoder(nn.Module):
@@ -99,6 +105,8 @@ class Decoder(nn.Module):
         for layer in self.layers:
             x = layer(x, m, e_mask, d_mask)
         return x
+
+
 
 
 class HybridModel(nn.Module):

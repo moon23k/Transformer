@@ -32,6 +32,7 @@ class Encoder(nn.Module):
 
 
 
+
 class Decoder(nn.Module):
     def __init__(self, config):
         super(Decoder, self).__init__()
@@ -60,6 +61,7 @@ class Decoder(nn.Module):
             )
 
         return x
+
 
 
 
