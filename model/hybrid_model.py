@@ -4,8 +4,7 @@ from collections import namedtuple
 from .common import (
     clones, 
     Embeddings, 
-    SublayerConnection,
-    MultiHeadAttention, 
+    SublayerConnection, 
     PositionwiseFeedForward
 )
 
