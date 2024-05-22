@@ -46,9 +46,8 @@ class Config(object):
         self.tokenizer_path = f'data/{self.task}/tokenizer.json'
 
         use_cuda = torch.cuda.is_available()
-        self.device_type = 'cuda' \
-                           if use_cuda and self.mode != 'inference' \
-                           else 'cpu'
+        device_condition = use_cuda and self.mode != 'inference'
+        self.device_type = 'cuda' if device_condition else 'cpu'
         self.device = torch.device(self.device_type)
 
 
